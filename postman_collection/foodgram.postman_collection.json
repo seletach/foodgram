@@ -2921,7 +2921,8 @@
 											"});",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -2945,7 +2946,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"Завтрак\",\n    \"color\": \"#E26CFD\",\n    \"slug\": \"breakfast\"\n}",
+									"raw": "{\n    \"name\": \"Завтрак\",\n    \"slug\": \"breakfast\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2981,7 +2982,8 @@
 											"});",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -3005,7 +3007,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"Завтрак\",\n    \"color\": \"#E26CFD\",\n    \"slug\": \"breakfast\"\n}",
+									"raw": "{\n    \"name\": \"Завтрак\",\n    \"slug\": \"breakfast\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3042,7 +3044,8 @@
 											"});",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -3066,7 +3069,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"Завтрак\",\n    \"color\": \"#E26C2D\",\n    \"slug\": \"breakfast\"\n}",
+									"raw": "{\n    \"name\": \"Завтрак\",\n    \"slug\": \"breakfast\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
