@@ -1,5 +1,5 @@
 from django.contrib import admin
-from recipes.models import Ingredient, Recipe, Tag, ShoppingCart, FavoriteRecipe
+from recipes.models import Ingredient, Recipe, Tag, ShoppingCart, FavoriteRecipe, IngredientsInRecipe
 
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
@@ -13,8 +13,9 @@ class RecipeAdmin(admin.ModelAdmin):
 
 admin.site.register(Ingredient)
 admin.site.register(Tag)
-admin.site.register(Recipe, RecipeAdmin)
+admin.site.register(Recipe)
 admin.site.register(ShoppingCart)
 admin.site.register(FavoriteRecipe)
+admin.site.register(IngredientsInRecipe)
 
 admin.site.empty_value_display = 'Не задано'
