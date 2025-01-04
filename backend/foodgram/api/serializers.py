@@ -2,10 +2,23 @@ from recipes.models import *
 from users.models import *
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
+import base64
+from django.core.files.base import ContentFile
+
+
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+
+        return super().to_internal_value(data)
 
 
 class CustomUserSerializer(ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
+    avatar = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = CustomUser
@@ -14,7 +27,8 @@ class CustomUserSerializer(ModelSerializer):
                   'username',
                   'first_name',
                   'last_name',
-                  'is_subscribed')
+                  'is_subscribed',
+                  'avatar')
 
     def get_is_subscribed(self, obj):
         """Метод проверки подписки"""
@@ -52,6 +66,7 @@ class RecipeSerializer(ModelSerializer):
     ingredients = IngredientsInRecipeSerializer(many=True, source='ingredientsinrecipe_set')
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
+    image = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Recipe
@@ -62,6 +77,7 @@ class RecipeSerializer(ModelSerializer):
                   'is_favorited',
                   'is_in_shopping_cart',
                   'name',
+                  'image',
                   'text',
                   'cooking_time')
         
@@ -79,11 +95,13 @@ class RecipeSerializer(ModelSerializer):
 
 
 class CreateRecipeSerializer(ModelSerializer):
+    image = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Recipe
         fields = ('ingredients',
                   'tags',
+                  'image',
                   'name',
                   'text',
                   'cooking_time')
@@ -104,7 +122,8 @@ class ShoppingCartSerializer(ModelSerializer):
 class SubscriptionsSerializer(ModelSerializer):
     recipes_count = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
-    recipes = serializers.SerializerMethodField()
+    # recipes = serializers.SerializerMethodField()
+    recipes = ShoppingCartSerializer()
 
     class Meta:
         model = CustomUser
@@ -116,7 +135,7 @@ class SubscriptionsSerializer(ModelSerializer):
                   'is_subscribed',
                   'recipes',
                   'recipes_count')
-    
+
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         user = request.user
@@ -124,9 +143,9 @@ class SubscriptionsSerializer(ModelSerializer):
             return False
         return Subscriptions.objects.filter(subscriber=user, author=obj.id).exists()
 
-    def get_recipes(self, obj):
-        recipes = Recipe.objects.filter(author=obj)
-        return RecipeSerializer(recipes, many=True).data
+    # def get_recipes(self, obj):
+    #     recipes = Recipe.objects.filter(author=obj)
+    #     return RecipeSerializer(recipes, many=True).data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj).count()

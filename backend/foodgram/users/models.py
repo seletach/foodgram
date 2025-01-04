@@ -6,6 +6,11 @@ class CustomUser(AbstractUser):
     """Модифицированная модель пользователя"""
 
     email = models.EmailField(max_length=254, unique=True)
+    avatar = models.ImageField(
+        verbose_name='Аватар',
+        upload_to='user_images/',
+        blank=True
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

@@ -128,7 +128,7 @@ def shoppingcart_detail(request, id):
     return Response('Рецепт удален из корзины', status=status.HTTP_204_NO_CONTENT)
 
 # FavoriteRecipe
-# Добавлять рецепты в избранное может только залогиненный пользователь.
+
 @api_view(['POST', 'DELETE'])
 @permission_classes([IsOwnerOnly])
 def favorite_detail(request, id):
@@ -143,7 +143,7 @@ def favorite_detail(request, id):
     favorite_recipe_item.delete()
     return Response('Рецепт удален из избранного', status=status.HTTP_204_NO_CONTENT)
 
-# Subscriptions решить проблемы
+# Subscriptions
 
 @api_view(['GET'])
 @permission_classes([IsOwnerOnly])

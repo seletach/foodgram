@@ -1,11 +1,12 @@
 from django.urls import path, include
 from rest_framework.authtoken import views
 from .views import *
+from .auth import CustomAuthToken
 
 app_name = 'api'
 
 urlpatterns = [
-    path('auth/token/login/', views.obtain_auth_token),
+    path('auth/token/login/', CustomAuthToken.as_view()),
 
     path('users/', user_list),
     path('users/<int:id>/', user_detail),
