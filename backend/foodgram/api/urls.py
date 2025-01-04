@@ -12,7 +12,7 @@ urlpatterns = [
     path('users/me/', me),
 
     path('users/subscriptions/', subscription_list),
-    path('users/<int:id>/subscribe', subscribe_detail),
+    path('users/<int:id>/subscribe/', subscribe_detail),
 
     path('tags/', tag_list_or_detail),
     path('tags/<int:id>/', tag_list_or_detail),

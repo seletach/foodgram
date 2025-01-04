@@ -1,6 +1,10 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import (AllowAny,
+                                        IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly,
+                                        IsAdminUser)
 
 from django.shortcuts import render, get_object_or_404
 
@@ -9,10 +13,15 @@ from django.shortcuts import render, get_object_or_404
 from recipes.models import *
 from users.models import *
 from .serializers import *
+from .permissions import OwnerOrReadOnly, IsOwnerOnly
+from .pagination import CustomPagination
 
 # CustomUser
 
+paginator = CustomPagination()
+
 @api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
 def user_list(request):
     if request.method == 'POST':
         serializer = CustomUserSerializer(data=request.data,
@@ -22,11 +31,13 @@ def user_list(request):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     users = CustomUser.objects.all()
-    serializer = CustomUserSerializer(users, many=True,
+    paginated_users = paginator.paginate_queryset(users, request)
+    serializer = CustomUserSerializer(paginated_users, many=True,
                                       context={'request': request})
-    return Response(serializer.data) 
+    return paginator.get_paginated_response(serializer.data)
 
 @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+@permission_classes([OwnerOrReadOnly])
 def user_detail(request, id):
     user = CustomUser.objects.get(id=id)
     if request.method == 'PUT' or request.method == 'PATCH':
@@ -41,7 +52,9 @@ def user_detail(request, id):
     serializer = CustomUserSerializer(user, context={'request': request})
     return Response(serializer.data)
 
+
 @api_view(['GET'])
+@permission_classes([IsOwnerOnly])
 def me(request):
     me = request.user
     if me.is_anonymous:
@@ -52,6 +65,7 @@ def me(request):
 # Tag
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def tag_list_or_detail(request, id=None):
     if id is not None:
         try:
@@ -68,6 +82,7 @@ def tag_list_or_detail(request, id=None):
 # Recipe
 
 @api_view(['GET', 'POST'])
+@permission_classes([OwnerOrReadOnly])
 def recipe_list(request):
     if request.method == 'POST':
         serializer = CreateRecipeSerializer(data=request.data, context={'request': request})
@@ -76,10 +91,12 @@ def recipe_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     recipes = Recipe.objects.all()
-    serializer = RecipeSerializer(recipes, many=True, context={'request': request})
-    return Response(serializer.data)
+    paginated_recipes = paginator.paginate_queryset(recipes, request)
+    serializer = RecipeSerializer(paginated_recipes, many=True, context={'request': request})
+    return paginator.get_paginated_response(serializer.data)
 
 @api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([OwnerOrReadOnly])
 def recipe_detail(request, id):
     recipe = Recipe.objects.get(id=id)
     if request.method == 'PATCH':
@@ -97,6 +114,7 @@ def recipe_detail(request, id):
 # ShoppingCart
 
 @api_view(['POST', 'DELETE'])
+@permission_classes([IsOwnerOnly])
 def shoppingcart_detail(request, id):
     recipe = Recipe.objects.get(id=id)
     if request.method == 'POST':
@@ -110,8 +128,9 @@ def shoppingcart_detail(request, id):
     return Response('Рецепт удален из корзины', status=status.HTTP_204_NO_CONTENT)
 
 # FavoriteRecipe
-
+# Добавлять рецепты в избранное может только залогиненный пользователь.
 @api_view(['POST', 'DELETE'])
+@permission_classes([IsOwnerOnly])
 def favorite_detail(request, id):
     recipe = Recipe.objects.get(id=id)
     if request.method == 'POST':
@@ -124,25 +143,41 @@ def favorite_detail(request, id):
     favorite_recipe_item.delete()
     return Response('Рецепт удален из избранного', status=status.HTTP_204_NO_CONTENT)
 
-# Subscriptions
+# Subscriptions решить проблемы
 
 @api_view(['GET'])
+@permission_classes([IsOwnerOnly])
 def subscription_list(request):
-    subscribers = Subscriptions.objects.filter(author=request.user).select_related('subscriber')
-    subscriber_users = []
-    for subscription in subscribers:
-        subscriber_users.append(subscription.subscriber)
-    serializer = SubscriptionsSerializer(subscriber_users, many=True, context={'request': request})
+    subscribers = CustomUser.objects.filter(subscriptions__subscriber=request.user)
+    # paginated_subscribers = paginator.paginate_queryset(subscribers, request)
+    serializer = SubscriptionsSerializer(subscribers,
+                                         many=True,
+                                         context={'request': request})
     return Response(serializer.data)
 
+#     serializer = CustomUserSerializer(paginated_users, many=True,
+#                                       context={'request': request})
+#     return paginator.get_paginated_response(serializer.data)
 
 @api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def subscribe_detail(request, id):
-    pass
+    author = CustomUser.objects.get(id=id)
+    if request.method == 'POST':
+        if Subscriptions.objects.filter(author=author, subscriber=request.user).exists():
+            return Response(f'Вы уже подписаны на {author.username}', status=status.HTTP_400_BAD_REQUEST)
+        # нужна проверка на подписку на самого себя
+        Subscriptions.objects.create(author=author, subscriber=request.user)
+        serializer = SubscriptionsSerializer(subscriber=request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    subscribe = Subscriptions.objects.get(author=author, subscriber=request.user)
+    subscribe.delete()
+    return Response(f'Вы отписались от {author.username}', status=status.HTTP_204_NO_CONTENT)
 
 # Ingredient
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def ingredient_list_or_detail(request, id=None):
     if id is not None:
         try:
@@ -153,5 +188,6 @@ def ingredient_list_or_detail(request, id=None):
             return Response(status=status.HTTP_404_NOT_FOUND)
     else:
         ingredients = Ingredient.objects.all()
-        serializer = IngredientSerializer(ingredients, many=True)
-        return Response(serializer.data)
+        paginated_ingredients = paginator.paginate_queryset(ingredients, request)
+        serializer = IngredientSerializer(paginated_ingredients, many=True)
+        return paginator.get_paginated_response(serializer.data)

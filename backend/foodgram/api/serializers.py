@@ -117,21 +117,19 @@ class SubscriptionsSerializer(ModelSerializer):
                   'recipes',
                   'recipes_count')
     
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
-    
     def get_is_subscribed(self, obj):
-        """Метод проверки подписки"""
-
         request = self.context.get('request')
         user = request.user
         if user.is_anonymous:
             return False
         return Subscriptions.objects.filter(subscriber=user, author=obj.id).exists()
 
-    def get_recipes(self, obj): # вывести все рецепты подписчиков
-        recipes = obj.recipes.all()
+    def get_recipes(self, obj):
+        recipes = Recipe.objects.filter(author=obj)
         return RecipeSerializer(recipes, many=True).data
+
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj).count()
 
 
 class IngredientSerializer(ModelSerializer):
