@@ -1,7 +1,8 @@
 from django.contrib import admin
 from users.models import CustomUser, Subscriptions
 
-# Register your models here.
+class CustomUserAdmin(admin.ModelAdmin):
+    search_fields = ['username', 'email']
 
-admin.site.register(CustomUser)
+admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Subscriptions)

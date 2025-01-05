@@ -5,6 +5,9 @@ from rest_framework.serializers import ModelSerializer
 import base64
 from django.core.files.base import ContentFile
 
+from djoser.serializers import TokenCreateSerializer
+from django.utils.translation import gettext_lazy as _
+
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
@@ -38,6 +41,30 @@ class CustomUserSerializer(ModelSerializer):
         if user.is_anonymous:
             return False
         return Subscriptions.objects.filter(subscriber=user, author=obj.id).exists()
+
+
+class CustomUserCreateSerializer(ModelSerializer):
+
+    class Meta:
+        model = CustomUser
+        fields = ('email',
+                  'username',
+                  'first_name',
+                  'last_name',
+                  'password')
+        extra_kwargs = {
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+            'username': {'required': True}
+        }
+
+
+class AvatarSerializer(ModelSerializer):
+    avatar = Base64ImageField(allow_null=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ('avatar',)
 
 
 class TagSerializer(ModelSerializer):
@@ -122,8 +149,6 @@ class ShoppingCartSerializer(ModelSerializer):
 class SubscriptionsSerializer(ModelSerializer):
     recipes_count = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
-    # recipes = serializers.SerializerMethodField()
-    recipes = ShoppingCartSerializer()
 
     class Meta:
         model = CustomUser
@@ -142,10 +167,6 @@ class SubscriptionsSerializer(ModelSerializer):
         if user.is_anonymous:
             return False
         return Subscriptions.objects.filter(subscriber=user, author=obj.id).exists()
-
-    # def get_recipes(self, obj):
-    #     recipes = Recipe.objects.filter(author=obj)
-    #     return RecipeSerializer(recipes, many=True).data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj).count()
