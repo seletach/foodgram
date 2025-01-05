@@ -22,6 +22,9 @@ from django_filters import rest_framework as filters
 from django.http import JsonResponse
 import hashlib
 
+import csv
+from django.http import HttpResponse
+
 # CustomUser
 
 paginator = CustomPagination()
@@ -128,7 +131,40 @@ def shoppingcart_detail(request, id):
 @api_view(['GET'])
 @permission_classes([IsOwnerOnly])
 def download_shopping_cart(request):
-    pass
+    if request.method == 'POST':
+        shopping_cart_items = ShoppingCart.objects.filter(owner=request.user)
+        ingredients_count = {}
+
+        for item in shopping_cart_items:
+            recipe = item.recipe
+            ingredients_in_recipe = IngredientsInRecipe.objects.filter(recipe=recipe)
+
+            for ingredient_in_recipe in ingredients_in_recipe:
+                ingredient_name = ingredient_in_recipe.ingredient.name
+                amount = ingredient_in_recipe.amount
+
+                if ingredient_name in ingredients_count:
+                    ingredients_count[ingredient_name] += amount
+                else:
+                    ingredients_count[ingredient_name] = amount
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="shopping_cart.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Ингредиент', 'Количество', 'Единица измерения'])
+
+        for ingredient_name, amount in ingredients_count.items():
+            ingredient = IngredientsInRecipe.objects.filter(ingredient__name=ingredient_name).first()
+            measurement_unit = ingredient.ingredient.measurement_unit if ingredient else 'единица'
+
+            writer.writerow([ingredient_name, amount, measurement_unit])
+
+        return response
+
+    return HttpResponse(status=405)
+
+
 
 # FavoriteRecipe
 
