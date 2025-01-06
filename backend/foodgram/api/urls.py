@@ -3,6 +3,7 @@ from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
 
 from .views import *
+from api.authtoken import EmailAuthToken, LogoutView
 
 router = DefaultRouter()
 router.register(r'users', CustomUserViewSet, basename='user')
@@ -10,6 +11,14 @@ router.register(r'users', CustomUserViewSet, basename='user')
 app_name = 'api'
 
 urlpatterns = [
+    # path('api-token-auth/', views.obtain_auth_token),
+
+    # path('auth/token/login/', EmailAuthToken.as_view()), рабочий вариант
+    # path('auth/token/logout/', LogoutView.as_view()),
+    # path('users/', user_list),
+    # path('users/<int:id>/', user_detail),
+    # path('users/me/', me),
+
     path('users/subscriptions/', subscription_list),
     path('users/<int:id>/subscribe/', subscribe_detail),
     path('users/me/avatar/', user_avatar),

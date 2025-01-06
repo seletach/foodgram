@@ -26,14 +26,87 @@ from users.models import *
 
 paginator = CustomPagination()
 
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
+
+# CustomUser
+
 
 class CustomUserViewSet(UserViewSet):
+    queryset = CustomUser .objects.all()
     serializer_class = CustomUserSerializer
-    queryset = CustomUser.objects.all()
-    permission_classes = (AllowAny,)
     pagination_class = CustomPagination
-    http_method_names = ('get', 'post', 'put', 'patch', 'delete')
 
+    def create(self, request, *args, **kwargs):
+        create_serializer = CustomUserCreateSerializer(data=request.data)
+        create_serializer.is_valid(raise_exception=True)
+        user = CustomUser (
+            email=create_serializer.validated_data['email'],
+            username=create_serializer.validated_data['username'],
+            first_name=create_serializer.validated_data['first_name'],
+            last_name=create_serializer.validated_data['last_name']
+        )
+        user.set_password(create_serializer.validated_data['password'])
+        user.save()
+        response_data = {
+            "email": user.email,
+            "id": user.id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name
+        }
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+# @api_view(['GET', 'POST'])
+# @permission_classes([AllowAny])
+# def user_list(request):
+#     if request.method == 'POST':
+#         serializer = CustomUserCreateSerializer(data=request.data,
+#                                           context={'request': request})
+#         if serializer.is_valid():
+#                 serializer.save()
+#                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     users = CustomUser.objects.all()
+#     paginated_users = paginator.paginate_queryset(users, request)
+#     serializer = CustomUserSerializer(paginated_users, many=True,
+#                                       context={'request': request})
+#     return paginator.get_paginated_response(serializer.data)
+
+# @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+# @permission_classes([OwnerOrReadOnly])
+# def user_detail(request, id):
+#     user = CustomUser.objects.get(id=id)
+#     if request.method == 'PUT' or request.method == 'PATCH':
+#         serializer = CustomUserSerializer(user, data=request.data, partial=True, context={'request': request})
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     elif request.method == 'DELETE':
+#         user.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+#     serializer = CustomUserSerializer(user, context={'request': request})
+#     return Response(serializer.data)
+
+
+# @api_view(['GET'])
+# @permission_classes([IsOwnerOnly])
+# def me(request):
+#     me = request.user
+#     if me.is_anonymous:
+#          return Response(False)
+#     serializer = CustomUserSerializer(me, context={'request': request})
+#     return Response(serializer.data)
+
+
+# "Если в запросе на добавление аватара отсутствует поле `avatar` - должен вернуться ответ со статусом 400"
 @api_view(['PUT', 'DELETE'])
 @permission_classes([IsOwnerOnly])
 def user_avatar(request):
@@ -205,6 +278,22 @@ def subscribe_detail(request, id):
 
 # Ingredient
 
+# @api_view(['GET'])
+# @permission_classes([AllowAny])
+# def ingredient_list_or_detail(request, id=None):
+#     if id is not None:
+#         try:
+#             ingredient = Ingredient.objects.get(id=id)
+#             serializer = IngredientSerializer(ingredient)
+#             return Response(serializer.data)
+#         except Tag.DoesNotExist:
+#             return Response(status=status.HTTP_404_NOT_FOUND)
+#     else:
+#         ingredients = Ingredient.objects.all()
+#         paginated_ingredients = paginator.paginate_queryset(ingredients, request)
+#         serializer = IngredientSerializer(paginated_ingredients, many=True)
+#         return paginator.get_paginated_response(serializer.data)
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def ingredient_list_or_detail(request, id=None):
@@ -217,6 +306,5 @@ def ingredient_list_or_detail(request, id=None):
             return Response(status=status.HTTP_404_NOT_FOUND)
     else:
         ingredients = Ingredient.objects.all()
-        paginated_ingredients = paginator.paginate_queryset(ingredients, request)
-        serializer = IngredientSerializer(paginated_ingredients, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        serializer = IngredientSerializer(ingredients, many=True)
+        return Response(serializer.data)

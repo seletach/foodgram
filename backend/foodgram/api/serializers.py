@@ -20,7 +20,7 @@ class Base64ImageField(serializers.ImageField):
 
 class CustomUserSerializer(ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
-    avatar = Base64ImageField(required=False, allow_null=True)
+    # avatar = Base64ImageField(required=False)
 
     class Meta:
         model = CustomUser
@@ -54,12 +54,32 @@ class CustomUserCreateSerializer(ModelSerializer):
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
-            'username': {'required': True}
+            'username': {'required': True},
+            'password': {'write_only': True}
         }
+
+    # def create(self, validated_data):
+    #     password = validated_data.pop('password')
+    #     user = CustomUser (
+    #         email=validated_data['email'],
+    #         username=validated_data['username'],
+    #         first_name=validated_data['first_name'],
+    #         last_name=validated_data['last_name']
+    #     )
+    #     user.set_password(password)
+    #     user.save()
+    #     return user
+        # return {
+        #     'email': user.email,
+        #     'id': user.id,
+        #     'username': user.username,
+        #     'first_name': user.first_name,
+        #     'last_name': user.last_name
+        # }
 
 
 class AvatarSerializer(ModelSerializer):
-    avatar = Base64ImageField(allow_null=True)
+    avatar = Base64ImageField()
 
     class Meta:
         model = CustomUser
@@ -92,7 +112,7 @@ class RecipeSerializer(ModelSerializer):
     ingredients = IngredientsInRecipeSerializer(many=True, source='ingredientsinrecipe_set')
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
-    image = Base64ImageField(required=False, allow_null=True)
+    image = Base64ImageField(required=False)
 
     class Meta:
         model = Recipe
