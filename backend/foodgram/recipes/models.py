@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -104,6 +105,11 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class RecipeShortLink(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    code = models.CharField(max_length=10, unique=True, default=uuid.uuid4().hex[:6])
 
 
 class IngredientsInRecipe(models.Model):

@@ -1,29 +1,26 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import (AllowAny,
-                                        IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly,
-                                        IsAdminUser)
-
-from django.shortcuts import render, get_object_or_404
-from djoser.views import UserViewSet
+import csv
+import hashlib
+from api.filters import RecipeFilter
+from api.pagination import CustomPagination
+from api.permissions import IsOwnerOnly, OwnerOrReadOnly
+from api.serializers import *
+from django.conf import settings
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
-
-# Create your views here.
 from djoser.views import UserViewSet
 from recipes.models import *
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import (
+    AllowAny,
+    IsAdminUser,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
+from rest_framework.response import Response
 from users.models import *
-from .serializers import *
-from .permissions import OwnerOrReadOnly, IsOwnerOnly
-from .pagination import CustomPagination
-from api.filters import RecipeFilter
-from django_filters import rest_framework as filters
-from django.http import JsonResponse
-import hashlib
-
-import csv
-from django.http import HttpResponse
 
 # CustomUser
 
@@ -104,13 +101,21 @@ def recipe_detail(request, id):
     serializer = RecipeSerializer(recipe, context={'request': request})
     return Response(serializer.data)
 
-@api_view(['GET']) # ПЕРЕДЕЛАТЬ 
+# RecipeShortLink
+
+@api_view(['GET'])
 @permission_classes([AllowAny])
 def recipe_get_link(request, id):
-    recipe = get_object_or_404(Recipe, id=id)
-    short_link_suffix = hashlib.md5(str(recipe.id).encode()).hexdigest()[:6]
-    short_link = f"https://foodgram.example.org/s/{short_link_suffix}"
-    return JsonResponse({"short-link": short_link})
+    if request.method == 'POST':
+        recipe = get_object_or_404(Recipe, id=id)
+        short_link, created = RecipeShortLink.objects.get_or_create(recipe=recipe)
+        short_url = f"{settings.SITE_URL}/s/{short_link.code}/"
+        return JsonResponse({"short-link": short_url})
+    return JsonResponse({"error": "Invalid request method."}, status=400)
+
+def redirect_to_recipe(request, code):
+    short_link = get_object_or_404(RecipeShortLink, code=code)
+    return redirect('recipe_detail', id=short_link.recipe.id)
 
 # ShoppingCart
 
@@ -134,37 +139,26 @@ def download_shopping_cart(request):
     if request.method == 'POST':
         shopping_cart_items = ShoppingCart.objects.filter(owner=request.user)
         ingredients_count = {}
-
         for item in shopping_cart_items:
             recipe = item.recipe
             ingredients_in_recipe = IngredientsInRecipe.objects.filter(recipe=recipe)
-
             for ingredient_in_recipe in ingredients_in_recipe:
                 ingredient_name = ingredient_in_recipe.ingredient.name
                 amount = ingredient_in_recipe.amount
-
                 if ingredient_name in ingredients_count:
                     ingredients_count[ingredient_name] += amount
                 else:
                     ingredients_count[ingredient_name] = amount
-
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="shopping_cart.csv"'
-
         writer = csv.writer(response)
         writer.writerow(['Ингредиент', 'Количество', 'Единица измерения'])
-
         for ingredient_name, amount in ingredients_count.items():
             ingredient = IngredientsInRecipe.objects.filter(ingredient__name=ingredient_name).first()
             measurement_unit = ingredient.ingredient.measurement_unit if ingredient else 'единица'
-
             writer.writerow([ingredient_name, amount, measurement_unit])
-
         return response
-
     return HttpResponse(status=405)
-
-
 
 # FavoriteRecipe
 

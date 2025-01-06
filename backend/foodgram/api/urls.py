@@ -1,7 +1,8 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.authtoken import views
-from .views import *
 from rest_framework.routers import DefaultRouter
+
+from .views import *
 
 router = DefaultRouter()
 router.register(r'users', CustomUserViewSet, basename='user')
@@ -19,6 +20,7 @@ urlpatterns = [
     path('recipes/', recipe_list),
     path('recipes/<int:id>/', recipe_detail),
     path('recipes/<int:id>/get-link/', recipe_get_link),
+    path('s/<str:code>/', redirect_to_recipe),
 
     path('recipes/<int:id>/shopping_cart/', shoppingcart_detail),
     path('recipes/download_shopping_cart/', download_shopping_cart),

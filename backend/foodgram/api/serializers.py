@@ -1,12 +1,11 @@
-from recipes.models import *
-from users.models import *
-from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
 import base64
 from django.core.files.base import ContentFile
-
-from djoser.serializers import TokenCreateSerializer
 from django.utils.translation import gettext_lazy as _
+from djoser.serializers import TokenCreateSerializer
+from recipes.models import *
+from rest_framework import serializers
+from rest_framework.serializers import ModelSerializer
+from users.models import *
 
 
 class Base64ImageField(serializers.ImageField):
