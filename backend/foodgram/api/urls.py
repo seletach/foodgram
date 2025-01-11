@@ -27,7 +27,7 @@ urlpatterns = [
     path('tags/<int:id>/', tag_list_or_detail),
 
     path('recipes/', recipe_list),
-    path('recipes/<int:id>/', recipe_detail),
+    path('recipes/<int:id>/', recipe_detail, name='recipe_detail'),
     path('recipes/<int:id>/get-link/', recipe_get_link),
     path('s/<str:code>/', redirect_to_recipe),
 

@@ -82,15 +82,17 @@ class Recipe(models.Model):
         through='IngredientsInRecipe',
         verbose_name='Ингредиенты',
         help_text='Минимум 2 ингредиента | ',
-        validators=[MinValueValidator(2)],
-        related_name='recipes'
+        validators=[MinValueValidator(1)],
+        related_name='recipes',
+        # blank=False
     )
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги',
         help_text='Выберите не менее одного тега | ',
         validators=[MinValueValidator(1)],
-        related_name='recipes'
+        related_name='recipes',
+        # blank=False
     )
     image = models.ImageField(
         verbose_name='Картинка',
@@ -121,7 +123,8 @@ class IngredientsInRecipe(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         verbose_name='Ингредиент',
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        validators=[MinValueValidator(2)]
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
