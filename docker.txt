@@ -2,20 +2,18 @@
            --net foodgram-network \
            --name foodgram_backend_container \
            -p 8080:8080 foodgram_image  запуск контейнера 
-2. sudo docker run -p 8080:8080 --rm foodgram_image  запуск контейнера без имени
-3. sudo docker run --name foodgram_backend_container -p 8080:8080 -v sqlite_data:/data foodgram_image  запуск контейнера с volume
+
+
 4. sudo docker run --name foodgram_db_container \
        --env-file .env \
        --net foodgram-network \
-       -v foodgram_volume_pg:/var/lib/postgresql/data \
+       -v foodgram_pg:/var/lib/postgresql/data \
        postgres:13.10  запуск БД 
-5. sudo docker run --env-file .env \
-           --net foodgram-network \
-           --name foodgram_backend_container \
-           -p 8080:8080 foodgram_image
-
-sudo docker build -t foodgram_image .   создание образа
 
 sudo docker run -it --rm foodgram_image /bin/bash  запуск контейнера в интерактивном режиме
 
 sudo docker exec -it foodgram_db_container psql -U django_user -d foodgram_db  подключиться к БД
+
+foodgram_db - название базы данных 
+foodgram_db_container - контейнер
+foodgram_pg - volume для pg

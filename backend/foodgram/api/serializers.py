@@ -115,8 +115,8 @@ class RecipeSerializer(ModelSerializer): # соединить сериалайз
     is_in_shopping_cart = serializers.SerializerMethodField()
     image = Base64ImageField(required=False)
 
-    request_user = serializers.SerializerMethodField()
-    recipe_owner = serializers.SerializerMethodField()
+    # request_user = serializers.SerializerMethodField()
+    # obj_author = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
@@ -131,16 +131,16 @@ class RecipeSerializer(ModelSerializer): # соединить сериалайз
                   'text',
                   'cooking_time',
                   
-                  'request_user',
-                  'recipe_owner'
+                #   'request_user',
+                #   'obj_author'
                   )
         
-    def get_request_user(self, obj):
-        request = self.context.get('request')
-        return request.user.username
+    # def get_request_user(self, obj):
+    #     request = self.context.get('request')
+    #     return request.user.username
     
-    def get_recipe_owner(self, obj):
-        return obj.author.username
+    # def get_obj_author(self, obj):
+    #     return obj.author.username
 
 
     def get_is_favorited(self, obj):

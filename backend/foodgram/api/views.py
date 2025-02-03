@@ -38,7 +38,7 @@ paginator = CustomPagination()
 # CustomUser
 
 
-class CustomUserViewSet(UserViewSet):
+class CustomUserViewSet(UserViewSet): # возваращает только пользователя сделавшего запрос, а не список пользователей
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     pagination_class = CustomPagination
@@ -66,7 +66,6 @@ class CustomUserViewSet(UserViewSet):
 
 
 @api_view(['PUT', 'DELETE'])
-@permission_classes([IsOwnerOnly])
 def user_avatar(request):
     user = request.user
     if request.method == 'PUT':
@@ -98,7 +97,7 @@ def tag_list_or_detail(request, id=None):
 # Recipe
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticatedOrReadOnly])
+@permission_classes([IsAuthenticatedOrReadOnly]) # РАБОТАЕТ
 def recipe_list(request):
     if request.method == 'POST':
         serializer = CreateRecipeSerializer(data=request.data, context={'request': request})
@@ -119,7 +118,7 @@ def recipe_list(request):
     return paginator.get_paginated_response(serializer.data)
 
 @api_view(['GET', 'PATCH', 'DELETE'])
-@permission_classes([OwnerOrReadOnly])
+@permission_classes([OwnerOrReadOnly]) # не работает, аноним может только читать, но не автор может редактировать
 def recipe_detail(request, id):
     recipe = get_object_or_404(Recipe, id=id)
     if request.method == 'PATCH':
@@ -151,7 +150,6 @@ def redirect_to_recipe(request, code):
 # ShoppingCart
 
 @api_view(['POST', 'DELETE'])
-@permission_classes([IsOwnerOnly])
 def shoppingcart_detail(request, id):
     recipe = get_object_or_404(Recipe, id=id)
     if request.method == 'POST':
@@ -167,7 +165,6 @@ def shoppingcart_detail(request, id):
     return Response('Рецепт удален из корзины', status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['GET'])
-@permission_classes([IsOwnerOnly])
 def download_shopping_cart(request):
     if request.method == 'GET':
         shopping_cart_items = ShoppingCart.objects.filter(owner=request.user)
@@ -196,7 +193,6 @@ def download_shopping_cart(request):
 # FavoriteRecipe
 
 @api_view(['POST', 'DELETE'])
-@permission_classes([IsOwnerOnly])
 def favorite_detail(request, id):
     recipe = get_object_or_404(Recipe, id=id)
     if request.method == 'POST':
@@ -214,7 +210,6 @@ def favorite_detail(request, id):
 # Subscriptions
 
 @api_view(['GET'])
-@permission_classes([IsOwnerOnly])
 def subscription_list(request):
     subscribers = CustomUser.objects.filter(subscriptions__subscriber=request.user)
     paginated_subscribers = paginator.paginate_queryset(subscribers, request)
