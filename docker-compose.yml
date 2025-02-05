@@ -2,6 +2,7 @@ version: '3.3'
 
 volumes:
   static:
+  media:
   foodgram_pg:
 
 services:
@@ -18,7 +19,8 @@ services:
     build: ./backend/foodgram/
     env_file: .env
     volumes:
-      - static:/backend_static
+      - static:/static/
+      - media:/media/
     depends_on:
       - db
 

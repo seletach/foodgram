@@ -1,10 +1,10 @@
-1. sudo docker run --env-file .env \
+1. sudo docker run --rm --env-file .env \
            --net foodgram-network \
            --name foodgram_backend_container \
            -p 8080:8080 foodgram_image  запуск контейнера 
 
 
-4. sudo docker run --name foodgram_db_container \
+4. sudo docker run --rm --name foodgram_db_container \
        --env-file .env \
        --net foodgram-network \
        -v foodgram_pg:/var/lib/postgresql/data \
