@@ -17,3 +17,5 @@ sudo docker exec -it foodgram_db_container psql -U django_user -d foodgram_db  �
 foodgram_db - название базы данных 
 foodgram_db_container - контейнер
 foodgram_pg - volume для pg
+
+sudo docker run -it --rm -v my_volume:/data alpine /bin/sh # зайти в том

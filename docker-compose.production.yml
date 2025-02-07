@@ -16,17 +16,17 @@ services:
 
   backend:
     container_name: foodgram_backend_container
-    build: ./backend/foodgram/
+    image: seletach/foodgram_backend
     env_file: .env
     volumes:
       - static:/static/
-      - media:/app/media/
+      - media:/media/
     depends_on:
       - db
 
   frontend:
     container_name: foodgram_frontend_container
-    build: ./frontend/
+    image: seletach/foodgram_frontend
     command: cp -r /app/build/. /frontend_static/
     volumes:
       - static:/frontend_static
@@ -35,7 +35,7 @@ services:
 
   gateway:
     container_name: foodgram_gateway_container
-    build: ./infra/
+    image: seletach/foodgram_gateway
     ports:
       - 8080:80
     volumes:
