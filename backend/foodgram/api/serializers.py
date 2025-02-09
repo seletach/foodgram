@@ -1,10 +1,11 @@
 import base64
+
 from django.core.files.base import ContentFile
+from rest_framework import serializers
+from rest_framework.serializers import ModelSerializer
 
 # from django.utils.translation import gettext_lazy as _
 from recipes.models import *
-from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
 from users.models import *
 
 User = get_user_model()

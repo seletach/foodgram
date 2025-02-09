@@ -1,38 +1,32 @@
 import csv
 import hashlib
-from api.filters import RecipeFilter
-from api.pagination import CustomPagination
-from api.permissions import IsOwnerOnly, OwnerOrReadOnly, DenyAllPermission
-from api.serializers import *
+import re
+
 from django.conf import settings
+from django.contrib.auth import authenticate
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from djoser.views import UserViewSet
-from recipes.models import *
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import (
-    AllowAny,
-    IsAdminUser,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
-from rest_framework.response import Response
-from users.models import *
-from rest_framework.filters import SearchFilter
-from django.db.models import Q
-import re
-
-from django.contrib.auth import authenticate
-from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.filters import SearchFilter
+from rest_framework.permissions import (AllowAny, IsAdminUser, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-from djoser.serializers import UserSerializer, UserCreateSerializer
+
+from api.filters import RecipeFilter
+from api.pagination import CustomPagination
+from api.permissions import DenyAllPermission, IsOwnerOnly, OwnerOrReadOnly
+from api.serializers import *
+from recipes.models import *
+from users.models import *
 
 paginator = CustomPagination()
 
