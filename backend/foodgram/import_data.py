@@ -20,5 +20,6 @@ def import_ingredients_from_csv(file_path):
             print(f'Added ingredient: {ingredient}')
 
 if __name__ == '__main__':
-    file_path = '/home/ilya/develop/foodgram3/foodgram/data/ingredients.csv'
+    # file_path = '/home/ilya/develop/foodgram3/foodgram/data/ingredients.csv'
+    file_path = '/app/data/ingredients.csv'
     import_ingredients_from_csv(file_path)

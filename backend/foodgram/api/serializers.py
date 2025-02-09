@@ -8,6 +8,9 @@ from rest_framework.serializers import ModelSerializer
 from rest_framework.exceptions import ValidationError
 from users.models import *
 from rest_framework.exceptions import NotFound
+from djoser.serializers import UserSerializer, UserCreateSerializer
+
+User = get_user_model()
 
 
 class Base64ImageField(serializers.ImageField):
@@ -24,7 +27,7 @@ class CustomUserSerializer(ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = ('email',
                   'id',
                   'username',
@@ -43,21 +46,21 @@ class CustomUserSerializer(ModelSerializer):
         return Subscriptions.objects.filter(subscriber=user, author=obj.id).exists()
 
 
-class CustomUserCreateSerializer(ModelSerializer):
+# class CustomUserCreateSerializer(ModelSerializer):
 
-    class Meta:
-        model = CustomUser
-        fields = ('email',
-                  'username',
-                  'first_name',
-                  'last_name',
-                  'password')
-        extra_kwargs = {
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'username': {'required': True},
-            'password': {'write_only': True}
-        }
+#     class Meta:
+#         model = CustomUser
+#         fields = ('email',
+#                   'username',
+#                   'first_name',
+#                   'last_name',
+#                   'password')
+#         extra_kwargs = {
+#             'first_name': {'required': True},
+#             'last_name': {'required': True},
+#             'username': {'required': True},
+#             'password': {'write_only': True}
+#         }
 
 
 class AvatarSerializer(ModelSerializer):

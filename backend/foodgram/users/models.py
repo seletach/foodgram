@@ -4,7 +4,9 @@ from django.db import models
 
 class CustomUser(AbstractUser):
     """Модифицированная модель пользователя"""
-
+    
+    first_name = models.CharField(max_length=30, blank=False)
+    last_name = models.CharField(max_length=30, blank=False)
     email = models.EmailField(max_length=254, unique=True)
     avatar = models.ImageField(
         verbose_name='Аватар',
@@ -13,7 +15,8 @@ class CustomUser(AbstractUser):
     )
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+
 
     class Meta:
         verbose_name = 'Пользователь'

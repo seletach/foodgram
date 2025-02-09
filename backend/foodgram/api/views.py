@@ -2,7 +2,7 @@ import csv
 import hashlib
 from api.filters import RecipeFilter
 from api.pagination import CustomPagination
-from api.permissions import IsOwnerOnly, OwnerOrReadOnly
+from api.permissions import IsOwnerOnly, OwnerOrReadOnly, DenyAllPermission
 from api.serializers import *
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
@@ -32,37 +32,66 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
+from djoser.serializers import UserSerializer, UserCreateSerializer
 
 paginator = CustomPagination()
 
 # CustomUser
 
 
-class CustomUserViewSet(UserViewSet): # возваращает только пользователя сделавшего запрос, а не список пользователей
+class CustomUserViewSet(UserViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     pagination_class = CustomPagination
     permission_classes = (AllowAny,)
 
-    def create(self, request, *args, **kwargs):
-        create_serializer = CustomUserCreateSerializer(data=request.data)
-        create_serializer.is_valid(raise_exception=True)
-        user = CustomUser (
-            email=create_serializer.validated_data['email'],
-            username=create_serializer.validated_data['username'],
-            first_name=create_serializer.validated_data['first_name'],
-            last_name=create_serializer.validated_data['last_name']
-        )
-        user.set_password(create_serializer.validated_data['password'])
-        user.save()
-        response_data = {
-            "email": user.email,
-            "id": user.id,
-            "username": user.username,
-            "first_name": user.first_name,
-            "last_name": user.last_name
-        }
-        return Response(response_data, status=status.HTTP_201_CREATED)
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return UserCreateSerializer
+        return CustomUserSerializer
+    
+    def get_queryset(self):
+        return CustomUser.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        # if not request.user.is_authenticated:
+        #     return Response({'detail': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = CustomUserSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        serializer = CustomUserSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # def get_me(self, request):
+    #     if not request.user.is_authenticated:
+    #         return Response({'detail': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+    #     # Сериализуем данные текущего пользователя
+    #     serializer = CustomUserSerializer(request.user, context={'request': request})
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+    # def create(self, request, *args, **kwargs):
+    #     create_serializer = CustomUserCreateSerializer(data=request.data)
+    #     create_serializer.is_valid(raise_exception=True)
+    #     user = CustomUser (
+    #         email=create_serializer.validated_data['email'],
+    #         username=create_serializer.validated_data['username'],
+    #         first_name=create_serializer.validated_data['first_name'],
+    #         last_name=create_serializer.validated_data['last_name']
+    #     )
+    #     user.set_password(create_serializer.validated_data['password'])
+    #     user.save()
+    #     response_data = {
+    #         "email": user.email,
+    #         "id": user.id,
+    #         "username": user.username,
+    #         "first_name": user.first_name,
+    #         "last_name": user.last_name
+    #     }
+    #     return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['PUT', 'DELETE'])
