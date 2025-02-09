@@ -22,10 +22,7 @@ jobs:
     #   with:
     #     python-version: 3.10
     - name: Set up Python
-      run: | 
-        pip install --upgrade pip
-        pip install python==3.10
-        python --version
+      run: python --version
     # Обновляем pip, устанавливаем flake8 и flake8-isort, 
     # устанавливаем зависимости проекта
     - name: Install dependencies
