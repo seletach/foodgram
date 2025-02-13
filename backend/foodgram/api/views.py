@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from djoser.permissions import *
 from djoser.views import UserViewSet
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -23,7 +24,7 @@ from rest_framework.views import APIView
 
 from api.filters import RecipeFilter
 from api.pagination import CustomPagination
-from api.permissions import DenyAllPermission, IsOwnerOnly, OwnerOrReadOnly
+from api.permissions import DenyAllPermission, IsOwnerOnly, OwnerOrReadOnly, OwnerOrAdminOrReadOnly
 from api.serializers import *
 from recipes.models import *
 from users.models import *
@@ -33,34 +34,34 @@ paginator = CustomPagination()
 # CustomUser
 
 
-class CustomUserViewSet(UserViewSet):
+class CustomUserViewSet(UserViewSet): # переопределить метод me
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     pagination_class = CustomPagination
-    permission_classes = (AllowAny,)
+    # permission_classes = (CurrentUserOrAdminOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+
 
     def get_serializer_class(self):
         if self.action == "create":
             return UserCreateSerializer
         return CustomUserSerializer
 
-    def get_queryset(self):
-        return CustomUser.objects.all()
+    # def get_queryset(self):
+    #     return CustomUser.objects.all()
 
-    def list(self, request, *args, **kwargs):
-        # if not request.user.is_authenticated:
-        #     return Response({'detail': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-        queryset = self.get_queryset()
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = CustomUserSerializer(
-                page, many=True, context={"request": request}
-            )
-            return self.get_paginated_response(serializer.data)
-        serializer = CustomUserSerializer(
-            queryset, many=True, context={"request": request}
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    # def list(self, request, *args, **kwargs):
+    #     queryset = self.get_queryset()
+    #     page = self.paginate_queryset(queryset)
+    #     if page is not None:
+    #         serializer = CustomUserSerializer(
+    #             page, many=True, context={"request": request}
+    #         )
+    #         return self.get_paginated_response(serializer.data)
+    #     serializer = CustomUserSerializer(
+    #         queryset, many=True, context={"request": request}
+    #     )
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     # def get_me(self, request):
     #     if not request.user.is_authenticated:
@@ -89,7 +90,6 @@ class CustomUserViewSet(UserViewSet):
     #         "last_name": user.last_name
     #     }
     #     return Response(response_data, status=status.HTTP_201_CREATED)
-
 
 @api_view(["PUT", "DELETE"])
 def user_avatar(request):
@@ -128,7 +128,7 @@ def tag_list_or_detail(request, id=None):
 
 
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticatedOrReadOnly])  # РАБОТАЕТ
+# @permission_classes([IsAuthenticatedOrReadOnly])
 def recipe_list(request):
     if request.method == "POST":
         serializer = CreateRecipeSerializer(
@@ -157,9 +157,7 @@ def recipe_list(request):
 
 
 @api_view(["GET", "PATCH", "DELETE"])
-@permission_classes(
-    [OwnerOrReadOnly]
-)  # не работает, аноним может только читать, но не автор может редактировать
+@permission_classes([OwnerOrAdminOrReadOnly])  # не работает, аноним может только читать, но не автор может редактировать
 def recipe_detail(request, id):
     recipe = get_object_or_404(Recipe, id=id)
     if request.method == "PATCH":
@@ -301,7 +299,7 @@ def subscription_list(request):
 
 
 @api_view(["POST", "DELETE"])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def subscribe_detail(request, id):
     author = get_object_or_404(CustomUser, id=id)
     recipes_limit = int(request.query_params.get("recipes_limit", 0))
