@@ -17,16 +17,19 @@ class RecipeAdmin(admin.ModelAdmin):
 
     def get_favorite_count(self, obj):
         return FavoriteRecipe.objects.filter(recipe=obj).count()
+
     get_favorite_count.short_description = 'Количество добавлений в избранное'
 
     def get_tags(self, obj):
         return '\n'.join(obj.tags.values_list('name', flat=True))
+
     get_tags.short_description = 'Теги'
 
 
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('name', 'measurement_unit')
     search_fields = ['name']
+
 
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Tag)

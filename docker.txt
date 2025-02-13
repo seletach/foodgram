@@ -19,3 +19,5 @@ foodgram_db_container - контейнер
 foodgram_pg - volume для pg
 
 sudo docker run -it --rm -v my_volume:/data alpine /bin/sh # зайти в том
+
+black --skip-string-normalization --line-length 79 (файл)

@@ -12,12 +12,10 @@ def import_ingredients_from_csv(file_path):
     with open(file_path, mode='r', encoding='utf-8') as file:
         reader = csv.reader(file)
         for row in reader:
-            ingredient = Ingredient(
-                name=row[0],
-                measurement_unit=row[1]
-            )
+            ingredient = Ingredient(name=row[0], measurement_unit=row[1])
             ingredient.save()
             print(f'Added ingredient: {ingredient}')
+
 
 if __name__ == '__main__':
     # file_path = '/home/ilya/develop/foodgram3/foodgram/data/ingredients.csv'

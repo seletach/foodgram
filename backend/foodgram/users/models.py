@@ -4,19 +4,16 @@ from django.db import models
 
 class CustomUser(AbstractUser):
     """Модифицированная модель пользователя"""
-    
+
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     email = models.EmailField(max_length=254, unique=True)
     avatar = models.ImageField(
-        verbose_name='Аватар',
-        upload_to='user_images/',
-        blank=True
+        verbose_name='Аватар', upload_to='user_images/', blank=True
     )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
-
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -30,15 +27,13 @@ class Subscriptions(models.Model):
     """Модель подписок пользователя на других пользователей"""
 
     author = models.ForeignKey(
-        CustomUser,
-        verbose_name='Автор',
-        on_delete=models.CASCADE
+        CustomUser, verbose_name='Автор', on_delete=models.CASCADE
     )
     subscriber = models.ForeignKey(
         CustomUser,
         verbose_name='Подписчик',
         related_name='subscriber',
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
 
     class Meta:

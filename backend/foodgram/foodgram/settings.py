@@ -92,12 +92,11 @@ DJOSER = {
     'SERIALIZERS': {
         'user_create': ['djoser.serializers.UserSerializer'],
         'current_user': ['api.serializers.CustomUserSerializer'],
-        'password_reset': ['djoser.serializers.SetPasswordSerializer']
+        'password_reset': ['djoser.serializers.SetUsernameSerializer']
     },
     'PERMISSIONS': {
         'user_list': ['rest_framework.permissions.AllowAny'],
-        'user': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
-        'current_user': ['rest_framework.permissions.IsAuthenticated']
+        'user': ['rest_framework.permissions.IsAuthenticatedOrReadOnly']
     },
 }
 
@@ -164,4 +163,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-SITE_URL = ''
+SITE_URL = 'foodgram-seletach.zapto.org'
