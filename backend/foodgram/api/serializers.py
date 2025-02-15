@@ -1,13 +1,19 @@
 import base64
 
 from django.core.files.base import ContentFile
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
-from djoser.serializers import PasswordRetypeSerializer
-from django.contrib.auth import authenticate
 
-from recipes.models import *
-from users.models import *
+from recipes.models import (
+    Tag,
+    Ingredient,
+    IngredientsInRecipe,
+    Recipe,
+    FavoriteRecipe,
+    ShoppingCart,
+)
+from users.models import Subscriptions, CustomUser
 
 User = get_user_model()
 
@@ -299,17 +305,3 @@ class SubscriptionsSerializer(ModelSerializer):
                 ].build_absolute_uri(recipe.image.url)
             serialized_recipes.append(recipe_data)
         return serialized_recipes
-
-
-# class CustomPasswordChangeSerializer(PasswordRetypeSerializer):
-#     old_password = serializers.CharField(required=True)
-#     new_password = serializers.CharField(required=True)
-
-#     def validate(self, attrs):
-#         user = self.context['request'].user
-#         old_password = attrs.get('old_password')
-
-#         if not user.check_password(old_password):
-#             raise serializers.ValidationError({'old_password': 'Wrong password.'})
-
-#         return super().validate(attrs)
