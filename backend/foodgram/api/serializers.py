@@ -6,7 +6,6 @@ from rest_framework.serializers import ModelSerializer
 from djoser.serializers import PasswordRetypeSerializer
 from django.contrib.auth import authenticate
 
-# from django.utils.translation import gettext_lazy as _
 from recipes.models import *
 from users.models import *
 
@@ -48,23 +47,6 @@ class CustomUserSerializer(ModelSerializer):
         return Subscriptions.objects.filter(
             subscriber=user, author=obj.id
         ).exists()
-
-
-# class CustomUserCreateSerializer(ModelSerializer):
-
-#     class Meta:
-#         model = CustomUser
-#         fields = ('email',
-#                   'username',
-#                   'first_name',
-#                   'last_name',
-#                   'password')
-#         extra_kwargs = {
-#             'first_name': {'required': True},
-#             'last_name': {'required': True},
-#             'username': {'required': True},
-#             'password': {'write_only': True}
-#         }
 
 
 class AvatarSerializer(ModelSerializer):
@@ -116,7 +98,7 @@ class IngredientsInRecipeSerializer(ModelSerializer):
         return representation
 
 
-class RecipeSerializer(ModelSerializer):  # соединить сериалайзеры Recipe
+class RecipeSerializer(ModelSerializer):
     tags = TagSerializer(many=True)
     author = CustomUserSerializer(read_only=True)
     ingredients = IngredientsInRecipeSerializer(
@@ -125,9 +107,6 @@ class RecipeSerializer(ModelSerializer):  # соединить сериалай�
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     image = Base64ImageField(required=False)
-
-    # request_user = serializers.SerializerMethodField()
-    # obj_author = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
@@ -142,16 +121,7 @@ class RecipeSerializer(ModelSerializer):  # соединить сериалай�
             'image',
             'text',
             'cooking_time',
-            #   'request_user',
-            #   'obj_author'
         )
-
-    # def get_request_user(self, obj):
-    #     request = self.context.get('request')
-    #     return request.user.username
-
-    # def get_obj_author(self, obj):
-    #     return obj.author.username
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
@@ -186,18 +156,19 @@ class CreateRecipeSerializer(ModelSerializer):
         )
 
     def validate(self, data):
-        ingredients_data = data.get('ingredients', [])
-        if len(ingredients_data) < 1:
+        """Валидация данных"""
+        self._validate_ingredients(data)
+        self._validate_tags(data)
+        return data
+
+    def _validate_ingredients(self, data):
+        """Валидация ингредиентов"""
+        ingredients_list = data.get('ingredients', [])
+        if len(ingredients_list) < 1:
             raise serializers.ValidationError('Минимум 1 ингредиент')
 
-        tags_data = data.get('tags', [])
-        if len(tags_data) < 1:
-            raise serializers.ValidationError('Минимум 1 тег')
-
         ingredient_ids = set()
-        tag_ids = set()
-
-        for ingredient in ingredients_data:
+        for ingredient in ingredients_list:
             amount = ingredient.get('amount')
             if amount is None or amount < 1:
                 raise serializers.ValidationError(
@@ -212,14 +183,19 @@ class CreateRecipeSerializer(ModelSerializer):
                 )
             ingredient_ids.add(ingredient_id)
 
-        for tag in tags_data:
+    def _validate_tags(self, data):
+        """Валидация тегов"""
+        tags_list = data.get('tags', [])
+        if len(tags_list) < 1:
+            raise serializers.ValidationError('Минимум 1 тег')
+
+        tag_ids = set()
+        for tag in tags_list:
             if tag in tag_ids:
                 raise serializers.ValidationError(
                     f'Тег с ID {tag} уже добавлен'
                 )
             tag_ids.add(tag)
-
-        return data
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')

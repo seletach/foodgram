@@ -51,13 +51,6 @@ class CustomUserViewSet(UserViewSet):
     queryset = CustomUser.objects.all()
     pagination_class = CustomPagination
 
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return UserCreateSerializer
-        elif self.action == 'set_password':
-            return SetPasswordSerializer
-        return CustomUserSerializer
-
     def get_permissions(self):
         if self.action == 'me':
             return [IsAuthenticated()]
@@ -129,11 +122,10 @@ def recipe_list(request):
 
 
 @api_view(['GET', 'PATCH', 'DELETE'])
-@permission_classes(
-    [OwnerOrAdminOrReadOnly]
-)  # не работает, аноним может только читать, но не автор может редактировать
-def recipe_detail(request, id):
+def recipe_detail(request, id):    
     recipe = get_object_or_404(Recipe, id=id)
+    if request.method in ['PATCH', 'DELETE'] and recipe.author != request.user:
+        return Response('Вы не автор этого рецепта', status=status.HTTP_403_FORBIDDEN)
     if request.method == 'PATCH':
         serializer = CreateRecipeSerializer(
             recipe,
