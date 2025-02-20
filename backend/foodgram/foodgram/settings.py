@@ -162,4 +162,4 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 SITE_URL = os.getenv('SITE_URL', 'localhost')
 
-CSRF_TRUSTED_ORIGINS = ['https://foodgram-seletach.zapto.org/']
+CSRF_TRUSTED_ORIGINS = ['https://foodgram-seletach.zapto.org']
