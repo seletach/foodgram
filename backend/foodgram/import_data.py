@@ -2,6 +2,9 @@ import csv
 import django
 import os
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'foodgram.settings')
+django.setup()
+
 from recipes.models import Ingredient
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'foodgram.settings')
