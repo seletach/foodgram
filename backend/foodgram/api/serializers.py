@@ -178,7 +178,7 @@ class CreateRecipeSerializer(ModelSerializer):
             amount = ingredient.get('amount')
             if amount is None or amount < 1:
                 raise serializers.ValidationError(
-                    'Количество не может быть меньше 1'
+                    'Количество ингредиента не может быть меньше 1'
                 )
 
             ingredient_instance = ingredient.get('ingredient')
