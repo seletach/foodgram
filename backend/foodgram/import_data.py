@@ -7,6 +7,7 @@ from recipes.models import Ingredient
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'foodgram.settings')
 django.setup()
 
+
 def import_ingredients_from_csv(file_path):
     with open(file_path, mode='r', encoding='utf-8') as file:
         reader = csv.reader(file)
