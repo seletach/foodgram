@@ -149,7 +149,7 @@ def recipe_detail(request, id):
 def recipe_get_link(request, id):
     recipe = get_object_or_404(Recipe, id=id)
     short_link, created = RecipeShortLink.objects.get_or_create(recipe=recipe)
-    short_url = f'{settings.SITE_URL}s/{short_link.code}/'
+    short_url = request.build_absolute_uri(f'/{short_link.code}/')
     return JsonResponse({'short-link': short_url})
 
 
