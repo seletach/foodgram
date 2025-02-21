@@ -80,16 +80,14 @@ class Recipe(models.Model):
         verbose_name='Ингредиенты',
         help_text='Минимум 2 ингредиента | ',
         validators=[MinValueValidator(1)],
-        related_name='recipes',
-        # blank=False
+        related_name='recipes'
     )
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги',
         help_text='Выберите не менее одного тега | ',
         validators=[MinValueValidator(1)],
-        related_name='recipes',
-        # blank=False
+        related_name='recipes'
     )
     image = models.ImageField(
         verbose_name='Картинка', upload_to='recipe_images/', blank=True
@@ -105,6 +103,8 @@ class Recipe(models.Model):
 
 
 class RecipeShortLink(models.Model):
+    """Модель коротких ссылок на рецепт"""
+
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     code = models.CharField(
         max_length=10, unique=True, default=uuid.uuid4().hex[:6]
@@ -112,6 +112,8 @@ class RecipeShortLink(models.Model):
 
 
 class IngredientsInRecipe(models.Model):
+    """Модель ингредиентов в рецепте"""
+
     recipe = models.ForeignKey(
         Recipe, verbose_name='Рецепт', on_delete=models.CASCADE
     )
@@ -134,6 +136,8 @@ class IngredientsInRecipe(models.Model):
 
 
 class ShoppingCart(models.Model):
+    """Модель корзины покупок"""
+
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name='Владелец корзины'
     )
@@ -150,6 +154,8 @@ class ShoppingCart(models.Model):
 
 
 class FavoriteRecipe(models.Model):
+    """Модель избранных рецептов"""
+
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name='Пользователь'
     )

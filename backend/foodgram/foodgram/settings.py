@@ -161,9 +161,3 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.CustomUser'
-
-SITE_URL = os.getenv('SITE_URL', 'localhost')
-
-CSRF_TRUSTED_ORIGINS = ['https://foodgram-seletach.zapto.org']
-
-CSRF_COOKIE_DOMAIN = '.zapto.org'
