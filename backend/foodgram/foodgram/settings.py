@@ -104,6 +104,8 @@ DJOSER = {
 
 DATABASES = {
     'default': {
+        # 'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': BASE_DIR / 'db.sqlite3',
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('POSTGRES_DB', 'django'),
         'USER': os.getenv('POSTGRES_USER', 'django'),
@@ -163,3 +165,5 @@ AUTH_USER_MODEL = 'users.CustomUser'
 SITE_URL = os.getenv('SITE_URL', 'localhost')
 
 CSRF_TRUSTED_ORIGINS = ['https://foodgram-seletach.zapto.org']
+
+CSRF_COOKIE_DOMAIN = '.zapto.org'
