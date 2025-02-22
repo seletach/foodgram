@@ -36,8 +36,10 @@ from users.models import Subscriptions, CustomUser
 
 paginator = CustomPagination()
 
+
 class CustomUserViewSet(UserViewSet):
-    """Вьюсет для работы с пользователями"""
+    """Вьюсет для объекта пользователя:
+    Регистрация токенов, POST, GET, PATCH, DELETE."""
     queryset = CustomUser.objects.all()
     pagination_class = CustomPagination
 
@@ -49,7 +51,7 @@ class CustomUserViewSet(UserViewSet):
 
 @api_view(['PUT', 'DELETE'])
 def user_avatar(request):
-    """Редактирование или удаление аватара"""
+    """Редактирование или удаление аватара."""
     user = request.user
     if request.method == 'PUT':
         serializer = AvatarSerializer(
@@ -63,10 +65,11 @@ def user_avatar(request):
     user.save()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def tag_list_or_detail(request, id=None):
-    """Возвращает список или объект тега"""
+    """Возвращает список или объект тега."""
     if id is not None:
         tag = get_object_or_404(Tag, id=id)
         serializer = TagSerializer(tag)
@@ -76,9 +79,10 @@ def tag_list_or_detail(request, id=None):
         serializer = TagSerializer(tags, many=True)
         return Response(serializer.data)
 
+
 @api_view(['GET', 'POST'])
 def recipe_list(request):
-    """Создание или список всех рецептов"""
+    """Создание или список всех рецептов."""
     if request.method == 'POST':
         serializer = CreateRecipeSerializer(
             data=request.data, context={'request': request}
@@ -95,9 +99,10 @@ def recipe_list(request):
     recipes = filterset.qs
     if request.user.is_authenticated:
         if request.GET.get('is_favorited') == '1':
-            recipes = recipes.filter(favoriterecipe__user=request.user)
+            recipes = recipes.filter(favorited_by__user=request.user)
         if request.GET.get('is_in_shopping_cart') == '1':
-            recipes = recipes.filter(shoppingcart__owner=request.user)
+            recipes = recipes.filter(added_to_carts__user=request.user)
+            # ИЗМЕНИЛ user=owner
     paginated_recipes = paginator.paginate_queryset(recipes, request)
     serializer = RecipeSerializer(
         paginated_recipes, many=True, context={'request': request}
@@ -107,7 +112,7 @@ def recipe_list(request):
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 def recipe_detail(request, id):
-    """Получение объекта рецепта или изменение рецепта"""
+    """Получение объекта рецепта или изменение рецепта."""
     recipe = get_object_or_404(Recipe, id=id)
     if request.method in ['PATCH', 'DELETE'] and recipe.author != request.user:
         return Response(
@@ -133,10 +138,11 @@ def recipe_detail(request, id):
     serializer = RecipeSerializer(recipe, context={'request': request})
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def recipe_get_link(request, id):
-    """Создание короткой ссылки на рецепт"""
+    """Создание короткой ссылки на рецепт."""
     recipe = get_object_or_404(Recipe, id=id)
     short_link, created = RecipeShortLink.objects.get_or_create(recipe=recipe)
     short_url = request.build_absolute_uri(f'/s/{short_link.code}/')
@@ -144,37 +150,38 @@ def recipe_get_link(request, id):
 
 
 def redirect_to_recipe(request, code):
-    """Возвращает рецепт по короткой ссылке"""
+    """Возвращает рецепт по короткой ссылке."""
     short_link = get_object_or_404(RecipeShortLink, code=code)
     return redirect('api:recipe_detail', id=short_link.recipe.id)
 
+
 @api_view(['POST', 'DELETE'])
 def shoppingcart_detail(request, id):
-    """Изменение списка покупок"""
+    """Изменение списка покупок."""
     recipe = get_object_or_404(Recipe, id=id)
     if request.method == 'POST':
         if ShoppingCart.objects.filter(
-            owner=request.user, recipe=recipe
+            user=request.user, recipe=recipe  # ИЗМЕНИЛ user=owner
         ).exists():
             return Response(
                 'Рецепт уже находиться в корзине',
                 status=status.HTTP_400_BAD_REQUEST,
             )
         shopping_cart_item = ShoppingCart.objects.create(
-            owner=request.user, recipe=recipe
+            user=request.user, recipe=recipe  # ИЗМЕНИЛ user=owner
         )
         serializer = UniversalRecipeSerializer(
             shopping_cart_item, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     if not ShoppingCart.objects.filter(
-        owner=request.user, recipe=recipe
+        user=request.user, recipe=recipe  # ИЗМЕНИЛ user=owner
     ).exists():
         return Response(
             'Рецепт не найден в корзине', status=status.HTTP_400_BAD_REQUEST
         )
     shopping_cart_item = get_object_or_404(
-        ShoppingCart, owner=request.user, recipe=recipe
+        ShoppingCart, user=request.user, recipe=recipe  # ИЗМЕНИЛ user=owner
     )
     shopping_cart_item.delete()
     return Response(
@@ -184,9 +191,10 @@ def shoppingcart_detail(request, id):
 
 @api_view(['GET'])
 def download_shopping_cart(request):
-    """Скачать список покупок"""
+    """Скачать список покупок."""
     if request.method == 'GET':
-        shopping_cart_items = ShoppingCart.objects.filter(owner=request.user)
+        shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
+        # ИЗМЕНИЛ user=owner
         ingredients_count = {}
         for item in shopping_cart_items:
             recipe = item.recipe
@@ -219,9 +227,10 @@ def download_shopping_cart(request):
         return response
     return HttpResponse(status=405)
 
+
 @api_view(['POST', 'DELETE'])
 def favorite_detail(request, id):
-    """Изменение списка избранных рецептов"""
+    """Изменение списка избранных рецептов."""
     recipe = get_object_or_404(Recipe, id=id)
     if request.method == 'POST':
         if FavoriteRecipe.objects.filter(
@@ -250,9 +259,10 @@ def favorite_detail(request, id):
         'Рецепт удален из избранного', status=status.HTTP_204_NO_CONTENT
     )
 
+
 @api_view(['GET'])
 def subscription_list(request):
-    """Возвращает список подписчиков пользователя"""
+    """Возвращает список подписчиков пользователя."""
     subscribers = CustomUser.objects.filter(
         subscriptions__subscriber=request.user
     ).annotate(recipes_count=Count('recipes'))
@@ -268,7 +278,7 @@ def subscription_list(request):
 
 @api_view(['POST', 'DELETE'])
 def subscribe_detail(request, id):
-    """Изменение списка подписчиков пользователя"""
+    """Изменение списка подписчиков пользователя."""
     author = get_object_or_404(
         CustomUser.objects.annotate(recipes_count=Count('recipes')), id=id
     )
@@ -309,10 +319,11 @@ def subscribe_detail(request, id):
         status=status.HTTP_204_NO_CONTENT,
     )
 
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def ingredient_list_or_detail(request, id=None):
-    """Возвращает объект или список ингредиентов"""
+    """Возвращает объект или список ингредиентов."""
     if id is not None:
         ingredient = get_object_or_404(Ingredient, id=id)
         serializer = IngredientSerializer(ingredient)

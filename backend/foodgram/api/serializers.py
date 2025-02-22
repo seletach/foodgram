@@ -102,7 +102,7 @@ class RecipeSerializer(ModelSerializer):
     tags = TagSerializer(many=True)
     author = CustomUserSerializer(read_only=True)
     ingredients = IngredientsInRecipeSerializer(
-        many=True, source='ingredientsinrecipe_set'
+        many=True, source='ingredients_in_recipe'
     )
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
@@ -136,7 +136,7 @@ class RecipeSerializer(ModelSerializer):
         if request is None or request.user.is_anonymous:
             return False
         return ShoppingCart.objects.filter(
-            owner=request.user, recipe=obj
+            user=request.user, recipe=obj  # ИЗМЕНИЛ user=owner
         ).exists()
 
 
@@ -169,10 +169,13 @@ class CreateRecipeSerializer(ModelSerializer):
 
     def validate_ingredients(self, ingredients):
         """Валидация ингредиентов"""
-        ingredient_ids = {ingredient.get('ingredient').id for ingredient in ingredients}
-        
+        ingredient_ids = {ingredient.get('ingredient').id
+                          for ingredient in ingredients}
+
         if len(ingredient_ids) != len(ingredients):
-            raise serializers.ValidationError('Ингредиенты не должны повторяться')
+            raise serializers.ValidationError(
+                'Ингредиенты не должны повторяться'
+            )
 
         return ingredients
 
@@ -211,11 +214,10 @@ class CreateRecipeSerializer(ModelSerializer):
             instance.tags.set(tags_data)
 
         if ingredients_data:
-            instance.ingredientsinrecipe_set.all().delete()
+            instance.ingredients_in_recipe.all().delete()
             IngredientsInRecipe.objects.bulk_create(
-                [IngredientsInRecipe(recipe=instance, **ingredient_data) 
-                 for ingredient_data in ingredients_data]
-                 )
+                [IngredientsInRecipe(recipe=instance, **ingredient_data)
+                 for ingredient_data in ingredients_data])
 
         return instance
 
@@ -278,5 +280,7 @@ class SubscriptionsSerializer(ModelSerializer):
         if recipes_limit > 0:
             recipes = recipes[:recipes_limit]
 
-        serializer = UniversalRecipeSerializer(recipes, many=True, context=self.context)
+        serializer = UniversalRecipeSerializer(recipes,
+                                               many=True,
+                                               context=self.context)
         return serializer.data

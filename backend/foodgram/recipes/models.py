@@ -7,7 +7,7 @@ User = get_user_model()
 
 
 class Tag(models.Model):
-    """Модель тега"""
+    """Тег для рецепта."""
 
     name = models.CharField(
         verbose_name='Название тега',
@@ -31,7 +31,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    """Модель ингредиента"""
+    """Ингредиент."""
 
     name = models.CharField(
         verbose_name='Название ингредиента',
@@ -53,7 +53,7 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
-    """Модель рецепта"""
+    """Рецепт."""
 
     author = models.ForeignKey(
         User,
@@ -63,7 +63,7 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         verbose_name='Название рецепта',
-        max_length=50,
+        max_length=256,
         help_text='Не более 50 символов',
     )
     text = models.TextField(verbose_name='Описание рецепта')
@@ -101,24 +101,34 @@ class Recipe(models.Model):
 
 
 class RecipeShortLink(models.Model):
-    """Модель коротких ссылок на рецепт"""
+    """Уникальный код для рецепта."""
 
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe,
+                               on_delete=models.CASCADE,
+                               related_name='short_links',
+                               verbose_name='Рецепт')  # добавил related_name
     code = models.CharField(
-        max_length=10, unique=True, default=uuid.uuid4().hex[:6]
+        max_length=10,
+        unique=True,
+        default=uuid.uuid4().hex[:6],
+        verbose_name='Уникальный код'
     )
 
 
 class IngredientsInRecipe(models.Model):
-    """Модель ингредиентов в рецепте"""
+    """Ингредиенты в рецепте."""
 
     recipe = models.ForeignKey(
-        Recipe, verbose_name='Рецепт', on_delete=models.CASCADE
+        Recipe,
+        verbose_name='Рецепт',
+        on_delete=models.CASCADE,
+        related_name='ingredients_in_recipe'  # добавил related_name
     )
     ingredient = models.ForeignKey(
         Ingredient,
         verbose_name='Ингредиент',
         on_delete=models.CASCADE,
+        related_name='used_in_recipes'  # добавил related_name
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
@@ -134,13 +144,19 @@ class IngredientsInRecipe(models.Model):
 
 
 class ShoppingCart(models.Model):
-    """Модель корзины покупок"""
+    """Корзина покупок."""
 
-    owner = models.ForeignKey(
-        User, on_delete=models.CASCADE, verbose_name='Владелец корзины'
+    user = models.ForeignKey(  # ИЗМЕНИЛ user=owner
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Владелец корзины',
+        related_name='shopping_carts'  # добавил related_name
     )
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, verbose_name='Рецепт'
+        Recipe,
+        on_delete=models.CASCADE,
+        verbose_name='Рецепт',
+        related_name='added_to_carts'  # добавил related_name
     )
 
     class Meta:
@@ -148,17 +164,23 @@ class ShoppingCart(models.Model):
         verbose_name_plural = 'Списки покупок'
 
     def __str__(self):
-        return f'{self.owner} {self.recipe}'
+        return f'{self.user} {self.recipe}'  # ИЗМЕНИЛ user=owner
 
 
 class FavoriteRecipe(models.Model):
-    """Модель избранных рецептов"""
+    """Избранный рецепт."""
 
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, verbose_name='Пользователь'
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+        related_name='favorite_recipes'  # добавил related_name
     )
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, verbose_name='Рецепт'
+        Recipe,
+        on_delete=models.CASCADE,
+        verbose_name='Рецепт',
+        related_name='favorited_by'  # добавил related_name
     )
 
     class Meta:

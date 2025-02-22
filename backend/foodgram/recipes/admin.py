@@ -9,7 +9,10 @@ from recipes.models import (
 )
 
 
+@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
+    """Рецепты."""
+
     list_display = ('name', 'author', 'get_favorite_count', 'get_tags')
     search_fields = ['name', 'author__username']
     list_filter = ['tags']
@@ -26,16 +29,44 @@ class RecipeAdmin(admin.ModelAdmin):
     get_tags.short_description = 'Теги'
 
 
+@admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
+    """Ингредиенты."""
+
     list_display = ('name', 'measurement_unit')
     search_fields = ['name']
 
 
-admin.site.register(Ingredient, IngredientAdmin)
-admin.site.register(Tag)
-admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(ShoppingCart)
-admin.site.register(FavoriteRecipe)
-admin.site.register(IngredientsInRecipe)
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    """Теги."""
+
+    list_display = ('name', 'slug')
+    search_fields = ['name']
+
+
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    """Список покупок."""
+
+    list_display = ('user', 'recipe')
+    raw_id_fields = ('user', 'recipe')
+
+
+@admin.register(FavoriteRecipe)
+class FavoriteRecipeAdmin(admin.ModelAdmin):
+    """Избранные рецепты."""
+
+    list_display = ('user', 'recipe')
+    raw_id_fields = ('user', 'recipe')
+
+
+@admin.register(IngredientsInRecipe)
+class IngredientsInRecipeAdmin(admin.ModelAdmin):
+    """Игредиенты в рецептах."""
+
+    list_display = ('recipe', 'ingredient', 'amount')
+    raw_id_fields = ('recipe', 'ingredient')
+
 
 admin.site.empty_value_display = 'Не задано'

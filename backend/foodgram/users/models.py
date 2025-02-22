@@ -3,13 +3,19 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
-    """Модифицированная модель пользователя"""
+    """Расширение модели пользователя."""
 
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
-    email = models.EmailField(max_length=254, unique=True)
+    first_name = models.CharField(max_length=150,
+                                  verbose_name='Имя')
+    last_name = models.CharField(max_length=150,
+                                 verbose_name='Фамилия')
+    email = models.EmailField(max_length=254,
+                              unique=True,
+                              verbose_name='Электронная почта')
     avatar = models.ImageField(
-        verbose_name='Аватар', upload_to='user_images/', blank=True
+        verbose_name='Аватар',
+        upload_to='user_images/',
+        blank=True
     )
 
     USERNAME_FIELD = 'email'
@@ -24,12 +30,15 @@ class CustomUser(AbstractUser):
 
 
 class Subscriptions(models.Model):
-    """Модель подписок пользователя на других пользователей"""
+    """Подписки пользователя на других пользователей."""
 
-    author = models.ForeignKey(
-        CustomUser, verbose_name='Автор', on_delete=models.CASCADE
+    author = models.ForeignKey(  # добавил related_name
+        CustomUser,
+        verbose_name='Автор',
+        on_delete=models.CASCADE,
+        related_name='subscriptions'
     )
-    subscriber = models.ForeignKey(
+    subscriber = models.ForeignKey(  # добавил related_name
         CustomUser,
         verbose_name='Подписчик',
         related_name='subscriber',
