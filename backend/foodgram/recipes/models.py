@@ -1,6 +1,6 @@
 import uuid
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 User = get_user_model()
@@ -72,21 +72,19 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления в минутах',
-        validators=[MinValueValidator(1)],
+        validators=[MinValueValidator(1), MaxValueValidator(240)],
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientsInRecipe',
         verbose_name='Ингредиенты',
         help_text='Минимум 2 ингредиента | ',
-        validators=[MinValueValidator(1)],
         related_name='recipes'
     )
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги',
         help_text='Выберите не менее одного тега | ',
-        validators=[MinValueValidator(1)],
         related_name='recipes'
     )
     image = models.ImageField(
@@ -121,10 +119,10 @@ class IngredientsInRecipe(models.Model):
         Ingredient,
         verbose_name='Ингредиент',
         on_delete=models.CASCADE,
-        validators=[MinValueValidator(2)],
     )
     amount = models.PositiveSmallIntegerField(
-        verbose_name='Количество', validators=[MinValueValidator(1)]
+        verbose_name='Количество',
+        validators=[MinValueValidator(1), MaxValueValidator(30)]
     )
 
     class Meta:
