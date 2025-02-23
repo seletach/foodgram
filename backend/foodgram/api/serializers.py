@@ -1,4 +1,5 @@
 import base64
+import uuid
 
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
@@ -13,7 +14,7 @@ from recipes.models import (
     FavoriteRecipe,
     ShoppingCart,
 )
-from users.models import Subscriptions, CustomUser
+from users.models import Subscription, CustomUser
 
 User = get_user_model()
 
@@ -49,7 +50,7 @@ class CustomUserSerializer(ModelSerializer):
         user = request.user
         if user.is_anonymous:
             return False
-        return Subscriptions.objects.filter(
+        return Subscription.objects.filter(
             subscriber=user, author=obj.id
         ).exists()
 
@@ -136,7 +137,7 @@ class RecipeSerializer(ModelSerializer):
         if request is None or request.user.is_anonymous:
             return False
         return ShoppingCart.objects.filter(
-            owner=request.user, recipe=obj
+            user=request.user, recipe=obj
         ).exists()
 
 
@@ -169,10 +170,12 @@ class CreateRecipeSerializer(ModelSerializer):
 
     def validate_ingredients(self, ingredients):
         """Валидация ингредиентов"""
-        ingredient_ids = {ingredient.get('ingredient').id for ingredient in ingredients}
-        
+        ingredient_ids = {ingredient.get('ingredient').id
+                          for ingredient in ingredients}
+
         if len(ingredient_ids) != len(ingredients):
-            raise serializers.ValidationError('Ингредиенты не должны повторяться')
+            raise serializers.ValidationError(
+                'Ингредиенты не должны повторяться')
 
         return ingredients
 
@@ -187,8 +190,8 @@ class CreateRecipeSerializer(ModelSerializer):
         """Метод создания рецепта"""
         ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
-
-        recipe = Recipe.objects.create(**validated_data)
+        code = uuid.uuid4().hex[:6]
+        recipe = Recipe.objects.create(code=code, **validated_data)
         recipe.tags.set(tags_data)
 
         ingredients_in_recipe = [
@@ -213,9 +216,8 @@ class CreateRecipeSerializer(ModelSerializer):
         if ingredients_data:
             instance.ingredientsinrecipe_set.all().delete()
             IngredientsInRecipe.objects.bulk_create(
-                [IngredientsInRecipe(recipe=instance, **ingredient_data) 
-                 for ingredient_data in ingredients_data]
-                 )
+                [IngredientsInRecipe(recipe=instance, **ingredient_data)
+                 for ingredient_data in ingredients_data])
 
         return instance
 
@@ -243,7 +245,7 @@ class UniversalRecipeSerializer(serializers.ModelSerializer):
         return super().to_representation(instance)
 
 
-class SubscriptionsSerializer(ModelSerializer):
+class SubscriptionSerializer(ModelSerializer):
     recipes_count = serializers.IntegerField(default=0)
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
@@ -267,7 +269,7 @@ class SubscriptionsSerializer(ModelSerializer):
         user = request.user
         if user.is_anonymous:
             return False
-        return Subscriptions.objects.filter(
+        return Subscription.objects.filter(
             subscriber=user, author=obj.id
         ).exists()
 
@@ -278,5 +280,7 @@ class SubscriptionsSerializer(ModelSerializer):
         if recipes_limit > 0:
             recipes = recipes[:recipes_limit]
 
-        serializer = UniversalRecipeSerializer(recipes, many=True, context=self.context)
+        serializer = UniversalRecipeSerializer(recipes,
+                                               many=True,
+                                               context=self.context)
         return serializer.data

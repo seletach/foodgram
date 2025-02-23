@@ -23,7 +23,7 @@ class CustomUser(AbstractUser):
         return self.username
 
 
-class Subscriptions(models.Model):
+class Subscription(models.Model):
     """Модель подписок пользователя на других пользователей"""
 
     author = models.ForeignKey(

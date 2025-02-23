@@ -1,5 +1,5 @@
 from django.contrib import admin
-from users.models import CustomUser, Subscriptions
+from users.models import CustomUser, Subscription
 
 
 class CustomUserAdmin(admin.ModelAdmin):
@@ -7,4 +7,4 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(CustomUser, CustomUserAdmin)
-admin.site.register(Subscriptions)
+admin.site.register(Subscription)
