@@ -14,7 +14,7 @@ from recipes.models import (
     ShoppingCart,
     Tag,
 )
-from users.models import CustomUser, Subscriptions
+from users.models import CustomUser, Subscription
 
 User = get_user_model()
 
@@ -50,7 +50,7 @@ class CustomUserSerializer(ModelSerializer):
         user = request.user
         if user.is_anonymous:
             return False
-        return Subscriptions.objects.filter(
+        return Subscription.objects.filter(
             subscriber=user, author=obj.id
         ).exists()
 
@@ -137,7 +137,7 @@ class RecipeSerializer(ModelSerializer):
         if request is None or request.user.is_anonymous:
             return False
         return ShoppingCart.objects.filter(
-            user=request.user, recipe=obj  # ИЗМЕНИЛ user=owner
+            user=request.user, recipe=obj
         ).exists()
 
 
@@ -192,7 +192,6 @@ class CreateRecipeSerializer(ModelSerializer):
         """Метод создания рецепта"""
         ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
-
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
 
@@ -250,7 +249,7 @@ class UniversalRecipeSerializer(serializers.ModelSerializer):
         return super().to_representation(instance)
 
 
-class SubscriptionsSerializer(ModelSerializer):
+class SubscriptionSerializer(ModelSerializer):
     recipes_count = serializers.IntegerField(default=0)
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
@@ -274,7 +273,7 @@ class SubscriptionsSerializer(ModelSerializer):
         user = request.user
         if user.is_anonymous:
             return False
-        return Subscriptions.objects.filter(
+        return Subscription.objects.filter(
             subscriber=user, author=obj.id
         ).exists()
 

@@ -1,5 +1,3 @@
-import uuid
-
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -91,6 +89,9 @@ class Recipe(models.Model):
     image = models.ImageField(
         verbose_name='Картинка', upload_to='recipe_images/', blank=True
     )
+    code = models.CharField(
+        max_length=10, unique=True, blank=True, null=True
+    )
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -101,21 +102,6 @@ class Recipe(models.Model):
         return self.name
 
 
-class RecipeShortLink(models.Model):
-    """Уникальный код для рецепта."""
-
-    recipe = models.ForeignKey(Recipe,
-                               on_delete=models.CASCADE,
-                               related_name='short_links',
-                               verbose_name='Рецепт')  # добавил related_name
-    code = models.CharField(
-        max_length=10,
-        unique=True,
-        default=uuid.uuid4().hex[:6],
-        verbose_name='Уникальный код'
-    )
-
-
 class IngredientsInRecipe(models.Model):
     """Ингредиенты в рецепте."""
 
@@ -123,13 +109,13 @@ class IngredientsInRecipe(models.Model):
         Recipe,
         verbose_name='Рецепт',
         on_delete=models.CASCADE,
-        related_name='ingredients_in_recipe'  # добавил related_name
+        related_name='ingredients_in_recipe'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         verbose_name='Ингредиент',
         on_delete=models.CASCADE,
-        related_name='used_in_recipes'  # добавил related_name
+        related_name='used_in_recipes'
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
@@ -147,17 +133,17 @@ class IngredientsInRecipe(models.Model):
 class ShoppingCart(models.Model):
     """Корзина покупок."""
 
-    user = models.ForeignKey(  # ИЗМЕНИЛ user=owner
+    user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Владелец корзины',
-        related_name='shopping_carts'  # добавил related_name
+        related_name='shopping_carts'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='added_to_carts'  # добавил related_name
+        related_name='added_to_carts'
     )
 
     class Meta:
@@ -165,7 +151,7 @@ class ShoppingCart(models.Model):
         verbose_name_plural = 'Списки покупок'
 
     def __str__(self):
-        return f'{self.user} {self.recipe}'  # ИЗМЕНИЛ user=owner
+        return f'{self.user} {self.recipe}'
 
 
 class FavoriteRecipe(models.Model):
@@ -175,13 +161,13 @@ class FavoriteRecipe(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='favorite_recipes'  # добавил related_name
+        related_name='favorite_recipes'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='favorited_by'  # добавил related_name
+        related_name='favorited_by'
     )
 
     class Meta:

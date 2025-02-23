@@ -29,16 +29,16 @@ class CustomUser(AbstractUser):
         return self.username
 
 
-class Subscriptions(models.Model):
+class Subscription(models.Model):
     """Подписки пользователя на других пользователей."""
 
-    author = models.ForeignKey(  # добавил related_name
+    author = models.ForeignKey(
         CustomUser,
         verbose_name='Автор',
         on_delete=models.CASCADE,
         related_name='subscriptions'
     )
-    subscriber = models.ForeignKey(  # добавил related_name
+    subscriber = models.ForeignKey(
         CustomUser,
         verbose_name='Подписчик',
         related_name='subscriber',

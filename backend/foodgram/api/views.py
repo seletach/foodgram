@@ -1,9 +1,12 @@
 import csv
+import uuid
 
+from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from djoser.views import UserViewSet
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import (
@@ -20,7 +23,7 @@ from api.serializers import (
     CreateRecipeSerializer,
     RecipeSerializer,
     UniversalRecipeSerializer,
-    SubscriptionsSerializer,
+    SubscriptionSerializer,
     IngredientSerializer,
 )
 from recipes.models import (
@@ -30,9 +33,8 @@ from recipes.models import (
     Recipe,
     FavoriteRecipe,
     ShoppingCart,
-    RecipeShortLink,
 )
-from users.models import Subscriptions, CustomUser
+from users.models import Subscription, CustomUser
 
 paginator = CustomPagination()
 
@@ -102,7 +104,6 @@ def recipe_list(request):
             recipes = recipes.filter(favorited_by__user=request.user)
         if request.GET.get('is_in_shopping_cart') == '1':
             recipes = recipes.filter(added_to_carts__user=request.user)
-            # ИЗМЕНИЛ user=owner
     paginated_recipes = paginator.paginate_queryset(recipes, request)
     serializer = RecipeSerializer(
         paginated_recipes, many=True, context={'request': request}
@@ -142,17 +143,29 @@ def recipe_detail(request, id):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def recipe_get_link(request, id):
-    """Создание короткой ссылки на рецепт."""
+    """Генерирует code."""
     recipe = get_object_or_404(Recipe, id=id)
-    short_link, created = RecipeShortLink.objects.get_or_create(recipe=recipe)
-    short_url = request.build_absolute_uri(f'/s/{short_link.code}/')
+
+    if not recipe.code:
+        with transaction.atomic():
+            code = uuid.uuid4().hex[:6]
+            try:
+                recipe.code = code
+                recipe.save()
+            except IntegrityError:
+                code = uuid.uuid4().hex[:6]
+                recipe.code = code
+                recipe.save()
+
+    short_url = request.build_absolute_uri(
+        reverse('api:recipe_short', kwargs={'code': recipe.code}))
     return JsonResponse({'short-link': short_url})
 
 
 def redirect_to_recipe(request, code):
-    """Возвращает рецепт по короткой ссылке."""
-    short_link = get_object_or_404(RecipeShortLink, code=code)
-    return redirect('api:recipe_detail', id=short_link.recipe.id)
+    """Перенаправляет на рецепт по короткой ссылке"""
+    recipe = get_object_or_404(Recipe, code=code)
+    return redirect('api:recipe_detail', id=recipe.id)
 
 
 @api_view(['POST', 'DELETE'])
@@ -161,27 +174,27 @@ def shoppingcart_detail(request, id):
     recipe = get_object_or_404(Recipe, id=id)
     if request.method == 'POST':
         if ShoppingCart.objects.filter(
-            user=request.user, recipe=recipe  # ИЗМЕНИЛ user=owner
+            user=request.user, recipe=recipe
         ).exists():
             return Response(
                 'Рецепт уже находиться в корзине',
                 status=status.HTTP_400_BAD_REQUEST,
             )
         shopping_cart_item = ShoppingCart.objects.create(
-            user=request.user, recipe=recipe  # ИЗМЕНИЛ user=owner
+            user=request.user, recipe=recipe
         )
         serializer = UniversalRecipeSerializer(
             shopping_cart_item, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     if not ShoppingCart.objects.filter(
-        user=request.user, recipe=recipe  # ИЗМЕНИЛ user=owner
+        user=request.user, recipe=recipe
     ).exists():
         return Response(
             'Рецепт не найден в корзине', status=status.HTTP_400_BAD_REQUEST
         )
     shopping_cart_item = get_object_or_404(
-        ShoppingCart, user=request.user, recipe=recipe  # ИЗМЕНИЛ user=owner
+        ShoppingCart, user=request.user, recipe=recipe
     )
     shopping_cart_item.delete()
     return Response(
@@ -194,7 +207,6 @@ def download_shopping_cart(request):
     """Скачать список покупок."""
     if request.method == 'GET':
         shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
-        # ИЗМЕНИЛ user=owner
         ingredients_count = {}
         for item in shopping_cart_items:
             recipe = item.recipe
@@ -268,7 +280,7 @@ def subscription_list(request):
     ).annotate(recipes_count=Count('recipes'))
     paginated_subscribers = paginator.paginate_queryset(subscribers, request)
     recipes_limit = int(request.query_params.get('recipes_limit', 0))
-    serializer = SubscriptionsSerializer(
+    serializer = SubscriptionSerializer(
         paginated_subscribers,
         many=True,
         context={'request': request, 'recipes_limit': recipes_limit},
@@ -289,29 +301,29 @@ def subscribe_detail(request, id):
                 'Вы не можете подписаться на самого себя',
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if Subscriptions.objects.filter(
+        if Subscription.objects.filter(
             author=author, subscriber=request.user
         ).exists():
             return Response(
                 f'Вы уже подписаны на {author.username}',
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        subscription = Subscriptions.objects.create(
+        subscription = Subscription.objects.create(
             author=author, subscriber=request.user
         )
-        serializer = SubscriptionsSerializer(
+        serializer = SubscriptionSerializer(
             subscription.author,
             context={'request': request, 'recipes_limit': recipes_limit},
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    if not Subscriptions.objects.filter(
+    if not Subscription.objects.filter(
         author=author, subscriber=request.user
     ).exists():
         return Response(
             'Подписка не найдена', status=status.HTTP_400_BAD_REQUEST
         )
     subscribe = get_object_or_404(
-        Subscriptions, author=author, subscriber=request.user
+        Subscription, author=author, subscriber=request.user
     )
     subscribe.delete()
     return Response(

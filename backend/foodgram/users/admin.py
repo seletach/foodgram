@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from users.models import CustomUser, Subscriptions
+from users.models import CustomUser, Subscription
 
 
 @admin.register(CustomUser)
@@ -22,7 +22,7 @@ class CustomUserAdmin(admin.ModelAdmin):
     readonly_fields = ['date_joined', 'last_login']
 
 
-@admin.register(Subscriptions)
+@admin.register(Subscription)
 class SubscriptionsAdmin(admin.ModelAdmin):
     """Подписки пользователей."""
 

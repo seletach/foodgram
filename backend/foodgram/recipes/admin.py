@@ -18,6 +18,7 @@ class RecipeAdmin(admin.ModelAdmin):
     search_fields = ['name', 'author__username']
     list_filter = ['tags']
     filter_horizontal = ['tags']
+    exclude = ('code',)
 
     def get_favorite_count(self, obj):
         return FavoriteRecipe.objects.filter(recipe=obj).count()
