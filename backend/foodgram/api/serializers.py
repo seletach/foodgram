@@ -1,19 +1,20 @@
 import base64
 
-from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
 from recipes.models import (
-    Tag,
+    FavoriteRecipe,
     Ingredient,
     IngredientsInRecipe,
     Recipe,
-    FavoriteRecipe,
     ShoppingCart,
+    Tag,
 )
-from users.models import Subscriptions, CustomUser
+from users.models import CustomUser, Subscriptions
 
 User = get_user_model()
 
@@ -169,8 +170,9 @@ class CreateRecipeSerializer(ModelSerializer):
 
     def validate_ingredients(self, ingredients):
         """Валидация ингредиентов"""
-        ingredient_ids = {ingredient.get('ingredient').id
-                          for ingredient in ingredients}
+        ingredient_ids = {
+            ingredient.get('ingredient').id for ingredient in ingredients
+        }
 
         if len(ingredient_ids) != len(ingredients):
             raise serializers.ValidationError(
@@ -216,8 +218,11 @@ class CreateRecipeSerializer(ModelSerializer):
         if ingredients_data:
             instance.ingredients_in_recipe.all().delete()
             IngredientsInRecipe.objects.bulk_create(
-                [IngredientsInRecipe(recipe=instance, **ingredient_data)
-                 for ingredient_data in ingredients_data])
+                [
+                    IngredientsInRecipe(recipe=instance, **ingredient_data)
+                    for ingredient_data in ingredients_data
+                ]
+            )
 
         return instance
 
@@ -280,7 +285,7 @@ class SubscriptionsSerializer(ModelSerializer):
         if recipes_limit > 0:
             recipes = recipes[:recipes_limit]
 
-        serializer = UniversalRecipeSerializer(recipes,
-                                               many=True,
-                                               context=self.context)
+        serializer = UniversalRecipeSerializer(
+            recipes, many=True, context=self.context
+        )
         return serializer.data
