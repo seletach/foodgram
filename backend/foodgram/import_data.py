@@ -1,11 +1,12 @@
 import csv 
 import django 
 import os 
- 
-from recipes.models import Ingredient 
- 
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'foodgram.settings') 
 django.setup() 
+
+from recipes.models import Ingredient 
+
  
  
 def import_ingredients_from_csv(file_path): 
