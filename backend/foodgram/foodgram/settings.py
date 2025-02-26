@@ -161,4 +161,4 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 PAGE_SIZE = 6
 
-CSRF_TRUSTED_ORIGINS = ['https://foodgram-seletach.zapto.org/']
+CSRF_TRUSTED_ORIGINS = [os.getenv('SITE_URL'),]
