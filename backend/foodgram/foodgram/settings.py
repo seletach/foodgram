@@ -161,4 +161,4 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 PAGE_SIZE = 6
 
-CSRF_TRUSTED_ORIGINS = [os.getenv('ALLOWED_HOSTS'),]
+CSRF_TRUSTED_ORIGINS = os.getenv('ALLOWED_HOSTS').split()
