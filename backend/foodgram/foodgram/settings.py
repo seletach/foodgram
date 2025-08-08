@@ -101,9 +101,14 @@ DJOSER = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+if DEBUG == True:
+    ENGINE_DATABASE = 'sqlite3'
+else:
+    ENGINE_DATABASE = 'postgresql'
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': f'django.db.backends.{ENGINE_DATABASE}',
         'NAME': os.getenv('POSTGRES_DB', 'django'),
         'USER': os.getenv('POSTGRES_USER', 'django'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
