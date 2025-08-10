@@ -19,7 +19,7 @@ from api.views import (
 )
 
 router = DefaultRouter()
-router.register(r'users/me/avatar', AvatarViewSet, basename='user-avatar')
+# router.register(r'users/me/avatar', AvatarViewSet, basename='user-avatar')
 router.register(r'users', CustomUserViewSet, basename='user')
 
 app_name = 'api'
@@ -39,7 +39,7 @@ urlpatterns = [
     # path('recipes/<int:id>/favorite/', favorite_detail),
     # path('ingredients/', ingredient_list_or_detail),
     # path('ingredients/<int:id>/', ingredient_list_or_detail),
-    # path('users/me/avatar/', AvatarViewSet.as_view()),
+    path('users/me/avatar/', AvatarViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
     path('auth/', include('djoser.urls.authtoken')),
     path('', include(router.urls)),
 ]

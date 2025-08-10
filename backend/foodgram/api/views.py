@@ -55,13 +55,12 @@ class AvatarViewSet(viewsets.ViewSet):
     """
     ViewSet для редактирования или удаления аватара пользователя.
     """
-# этот класс ждет id для того чтобы отредачить или удалить аватар, 
-# необходимо сделать так, чтобы класс не ждал id а работал с активным пользователем, или не работал
+
     def get_object(self):
         return self.request.user
 
     def update(self, request, pk=None):
-        """Обновление аватара (аналог PUT)."""
+        """Обновление аватара."""
         user = self.get_object()
         serializer = AvatarSerializer(
             user, data=request.data, partial=True, context={'request': request}
@@ -72,7 +71,7 @@ class AvatarViewSet(viewsets.ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk=None):
-        """Удаление аватара (аналог DELETE)."""
+        """Удаление аватара."""
         user = self.get_object()
         user.avatar.delete()
         user.save()
