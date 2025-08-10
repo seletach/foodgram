@@ -89,17 +89,22 @@ class IngredientsInRecipeSerializer(ModelSerializer):
 
 
 class RecipeSerializer(ModelSerializer):
+    tags = TagSerializer(many=True)
+    author = CustomUserSerializer(read_only=True)
     ingredients = SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
+    image = Base64ImageField(required=False)
 
     class Meta:
         model = Recipe
         fields = (
             'id',
-            # 'tags',
+            'tags',
             'author',
             'ingredients',
-            # 'is_favorited',
-            # 'is_in_shopping_cart',
+            'is_favorited',
+            'is_in_shopping_cart',
             'name',
             'image',
             'text',
@@ -109,3 +114,52 @@ class RecipeSerializer(ModelSerializer):
     def get_ingredients(self, obj):
         ingredients_in_recipe = obj.ingredients_in_recipe.all()
         return IngredientsInRecipeSerializer(ingredients_in_recipe, many=True).data
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
+            return False
+        return FavoriteRecipe.objects.filter(
+            user=request.user, recipe=obj
+        ).exists()
+
+    def get_is_in_shopping_cart(self, obj):
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
+            return False
+        return ShoppingCart.objects.filter(
+            user=request.user, recipe=obj
+        ).exists()
+
+
+class CreateRecipeSerializer(ModelSerializer):
+    ingredients = IngredientsInRecipeSerializer(many=True)
+    image = Base64ImageField(allow_null=True)
+    # tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'ingredients',
+            'tags',
+            'image',
+            'name',
+            'text',
+            'cooking_time',
+        )
+
+    # def create(self, validated_data):
+    #     """Метод создания рецепта"""
+    #     ingredients_data = validated_data.pop('ingredients')
+    #     tags_data = validated_data.pop('tags')
+    #     recipe = Recipe.objects.create(**validated_data)
+    #     recipe.tags.set(tags_data)
+
+    #     ingredients_in_recipe = [
+    #         IngredientsInRecipe(recipe=recipe, **ingredient_data)
+    #         for ingredient_data in ingredients_data
+    #     ]
+
+    #     IngredientsInRecipe.objects.bulk_create(ingredients_in_recipe)
+
+    #     return recipe
