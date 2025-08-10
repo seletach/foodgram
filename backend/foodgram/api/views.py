@@ -19,7 +19,7 @@ from api.filters import RecipeFilter
 from api.pagination import CustomPagination
 from api.serializers import (
     AvatarSerializer,
-    # TagSerializer,
+    TagSerializer,
     # CreateRecipeSerializer,
     # RecipeSerializer,
     # UniversalRecipeSerializer,
@@ -76,3 +76,8 @@ class AvatarViewSet(viewsets.ViewSet):
         user.avatar.delete()
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer

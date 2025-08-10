@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 
 from api.views import (
     CustomUserViewSet,
-    AvatarViewSet
+    AvatarViewSet,
+    TagViewSet
     # subscription_list,
     # subscribe_detail,
     # user_avatar,
@@ -21,6 +22,7 @@ from api.views import (
 router = DefaultRouter()
 # router.register(r'users/me/avatar', AvatarViewSet, basename='user-avatar')
 router.register(r'users', CustomUserViewSet, basename='user')
+router.register(f'tags', TagViewSet, basename='tag')
 
 app_name = 'api'
 

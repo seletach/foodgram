@@ -68,3 +68,10 @@ class AvatarSerializer(ModelSerializer):
                 {'detail': 'Поле avatar не может быть пустым'}
             )
         return super().validate(attrs)
+
+
+class TagSerializer(ModelSerializer):
+
+    class Meta:
+        model = Tag
+        fields = ('id', 'name', 'slug')
