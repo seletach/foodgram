@@ -62,7 +62,9 @@ class AvatarSerializer(ModelSerializer):
         model = CustomUser
         fields = ('avatar',)
 
-    def validate_avatar(self, value):
-        if not value:
-            raise serializers.ValidationError()
-        return value
+    def validate(self, attrs):
+        if 'avatar' not in attrs:
+            raise serializers.ValidationError(
+                {'detail': 'Поле avatar не может быть пустым'}
+            )
+        return super().validate(attrs)
