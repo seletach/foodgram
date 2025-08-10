@@ -21,7 +21,7 @@ from api.serializers import (
     AvatarSerializer,
     TagSerializer,
     # CreateRecipeSerializer,
-    # RecipeSerializer,
+    RecipeSerializer,
     # UniversalRecipeSerializer,
     # SubscriptionSerializer,
     # IngredientSerializer,
@@ -81,3 +81,10 @@ class AvatarViewSet(viewsets.ViewSet):
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+    pagination_class = CustomPagination
+

@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
 from recipes.models import (
     FavoriteRecipe,
@@ -75,3 +75,37 @@ class TagSerializer(ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name', 'slug')
+
+
+class IngredientsInRecipeSerializer(ModelSerializer):
+    # id - чей id, либо цифра ингредиента лежащего в БД ингредиентов, либо порядок в котором ингредиенты лежат в рецепте !?
+    name = serializers.CharField(source='ingredient.name')
+    measurement_unit = serializers.CharField(source='ingredient.measurement_unit')
+    amount = serializers.IntegerField()
+
+    class Meta:
+        model = IngredientsInRecipe
+        fields = ('id', 'name', 'measurement_unit', 'amount')
+
+
+class RecipeSerializer(ModelSerializer):
+    ingredients = SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            # 'tags',
+            'author',
+            'ingredients',
+            # 'is_favorited',
+            # 'is_in_shopping_cart',
+            'name',
+            'image',
+            'text',
+            'cooking_time',
+        )
+
+    def get_ingredients(self, obj):
+        ingredients_in_recipe = obj.ingredients_in_recipe.all()
+        return IngredientsInRecipeSerializer(ingredients_in_recipe, many=True).data
