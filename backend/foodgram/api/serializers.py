@@ -1,7 +1,10 @@
 import base64
+import logging
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404
+from django.db import transaction
 
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
@@ -18,6 +21,7 @@ from users.models import CustomUser, Subscription
 
 User = get_user_model()
 
+logger = logging.getLogger(__name__)
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
@@ -45,7 +49,7 @@ class CustomUserSerializer(ModelSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        """Метод проверки подписки"""
+        '''Метод проверки подписки'''
         request = self.context.get('request')
         user = request.user
         if user.is_anonymous:
@@ -77,11 +81,29 @@ class TagSerializer(ModelSerializer):
         fields = ('id', 'name', 'slug')
 
 
+class IngredientSerializer(ModelSerializer):
+
+    class Meta:
+        model = Ingredient
+        fields = ('id', 'name', 'measurement_unit')
+
+
+class IngredientInRecipeWriteSerializer(ModelSerializer):
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
+    amount = serializers.IntegerField()
+
+    class Meta:
+        model = IngredientsInRecipe
+        fields = ('id', 'amount')
+
+
 class IngredientsInRecipeSerializer(ModelSerializer):
     # id - чей id, либо цифра ингредиента лежащего в БД ингредиентов, либо порядок в котором ингредиенты лежат в рецепте !?
     name = serializers.CharField(source='ingredient.name')
     measurement_unit = serializers.CharField(source='ingredient.measurement_unit')
-    amount = serializers.IntegerField()
+    # amount = serializers.IntegerField()
+    id = serializers.ReadOnlyField(source='ingredient.id')
+
 
     class Meta:
         model = IngredientsInRecipe
@@ -133,9 +155,9 @@ class RecipeSerializer(ModelSerializer):
 
 
 class CreateRecipeSerializer(ModelSerializer):
-    ingredients = IngredientsInRecipeSerializer(many=True)
+    ingredients = IngredientInRecipeWriteSerializer(many=True, write_only=True)
     image = Base64ImageField(allow_null=True)
-    # tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
+    tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
 
     class Meta:
         model = Recipe
@@ -148,18 +170,22 @@ class CreateRecipeSerializer(ModelSerializer):
             'cooking_time',
         )
 
-    # def create(self, validated_data):
-    #     """Метод создания рецепта"""
-    #     ingredients_data = validated_data.pop('ingredients')
-    #     tags_data = validated_data.pop('tags')
-    #     recipe = Recipe.objects.create(**validated_data)
-    #     recipe.tags.set(tags_data)
+    def to_internal_value(self, data):
+        return super().to_internal_value(data)
 
-    #     ingredients_in_recipe = [
-    #         IngredientsInRecipe(recipe=recipe, **ingredient_data)
-    #         for ingredient_data in ingredients_data
-    #     ]
+    def validate_ingredients(self, value):
+        if not value:
+            raise serializers.ValidationError('Должен быть хотя бы один ингредиент.')
 
-    #     IngredientsInRecipe.objects.bulk_create(ingredients_in_recipe)
-
-    #     return recipe
+        ingredients = []
+        for item in value:
+            ingredient = item['id']
+            if ingredient in ingredients:
+                raise serializers.ValidationError('Ингредиенты не должны повторяться.')
+            ingredients.append(ingredient)
+            if item['amount'] <= 0:
+                raise serializers.ValidationError('Количество должно быть больше 0.')
+        return value
+    
+    def to_representation(self, instance):
+        return RecipeSerializer(instance, context=self.context).data

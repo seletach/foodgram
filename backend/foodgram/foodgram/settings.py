@@ -15,6 +15,34 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split()
 
 # Application definition
 
+LOGGING = {
+    'version': 1,
+
+    'disable_existing_loggers': False,
+    
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+        },
+
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'api/all.log',
+            'level': 'DEBUG',
+            'mode': 'w',
+            'encoding': 'utf-8',
+        },
+    },
+
+    'loggers': {
+        '': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO'
+        },
+    },
+}
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

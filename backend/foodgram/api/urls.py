@@ -5,7 +5,8 @@ from api.views import (
     CustomUserViewSet,
     AvatarViewSet,
     TagViewSet,
-    RecipeViewSet
+    RecipeViewSet,
+    IngredientViewSet
     # subscription_list,
     # subscribe_detail,
     # user_avatar,
@@ -23,6 +24,7 @@ from api.views import (
 router = DefaultRouter()
 router.register(r'users', CustomUserViewSet, basename='user')
 router.register(r'tags', TagViewSet, basename='tag')
+router.register(r'ingredients', IngredientViewSet, basename='ingredient')
 router.register(r'recipes', RecipeViewSet, basename='recipe')
 
 app_name = 'api'
