@@ -189,3 +189,52 @@ class CreateRecipeSerializer(ModelSerializer):
     
     def to_representation(self, instance):
         return RecipeSerializer(instance, context=self.context).data
+
+
+class UniversalRecipeSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    cooking_time = serializers.IntegerField()
+    image = serializers.ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+    def to_representation(self, instance):
+        """Обработка разных моделей"""
+        if isinstance(instance, (ShoppingCart, FavoriteRecipe)):
+            recipe = instance.recipe
+            return {
+                'id': recipe.id,
+                'name': recipe.name,
+                'image': recipe.image.url if recipe.image else None,
+                'cooking_time': recipe.cooking_time,
+            }
+        return super().to_representation(instance)
+
+
+class SubscriptionSerializer(CustomUserSerializer):
+    recipes = SerializerMethodField()
+    recipes_count = SerializerMethodField()
+
+    class Meta(CustomUserSerializer.Meta):
+        fields = CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count')
+
+    def get_recipes(self, obj):
+        request = self.context.get('request')
+        recipes_limit = request.query_params.get('recipes_limit')
+        queryset = obj.recipes.all()
+        
+        if recipes_limit:
+            queryset = queryset[:int(recipes_limit)]
+            
+        serializer = UniversalRecipeSerializer(
+            queryset,
+            many=True,
+            context={'request': request}
+        )
+        return serializer.data
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()

@@ -3,13 +3,13 @@ import uuid
 import logging
 
 from django.db import IntegrityError, transaction
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from djoser.views import UserViewSet
 from django.urls import reverse
 from rest_framework import status,viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -23,8 +23,8 @@ from api.serializers import (
     TagSerializer,
     CreateRecipeSerializer,
     RecipeSerializer,
-    # UniversalRecipeSerializer,
-    # SubscriptionSerializer,
+    UniversalRecipeSerializer,
+    SubscriptionSerializer,
     IngredientSerializer,
 )
 from recipes.models import (
@@ -52,6 +52,60 @@ class CustomUserViewSet(UserViewSet):
         if self.action == 'me':
             return [IsAuthenticated()]
         return super().get_permissions()
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def subscriptions(self, request):
+        """Получение списка подписок пользователя."""
+        user = request.user
+        subscribed_authors = CustomUser.objects.filter(
+            subscriptions__subscriber=user
+        ).annotate(recipes_count=Count('recipes'))
+        
+        paginated_authors = paginator.paginate_queryset(subscribed_authors, request)
+        serializer = SubscriptionSerializer(
+            paginated_authors,
+            many=True,
+            context={'request': request}
+        )
+        return paginator.get_paginated_response(serializer.data)
+
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    def subscribe(self, request, id=None):
+        """Подписка/отписка на пользователя."""
+        author = get_object_or_404(CustomUser, id=id)
+        user = request.user
+
+        if request.method == 'POST':
+            if user == author:
+                return Response(
+                    {'detail': 'Нельзя подписаться на самого себя'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if Subscription.objects.filter(subscriber=user, author=author).exists():
+                return Response(
+                    {'detail': 'Вы уже подписаны на этого пользователя'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            Subscription.objects.create(subscriber=user, author=author)
+            serializer = SubscriptionSerializer(
+                author,
+                context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            subscription = Subscription.objects.filter(subscriber=user, author=author).first()
+            if not subscription:
+                return Response(
+                    {'detail': 'Вы не подписаны на этого пользователя'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            subscription.delete()
+            return Response(
+                {'detail': 'Вы успешно отписались'},
+                status=status.HTTP_204_NO_CONTENT
+            )
 
 
 class AvatarViewSet(viewsets.ViewSet):
@@ -189,7 +243,120 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {'detail': str(error)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+    
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    def shopping_cart(self, request, pk=None):
+        """Добавление/удаление рецепта в корзину покупок."""
+        recipe = self.get_object()
+        user = request.user
+
+        if request.method == 'POST':
+            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+                return Response(
+                    {'detail': 'Рецепт уже находится в корзине'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            ShoppingCart.objects.create(user=user, recipe=recipe)
+            serializer = UniversalRecipeSerializer(recipe, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            shopping_cart_item = ShoppingCart.objects.filter(user=user, recipe=recipe).first()
+            if not shopping_cart_item:
+                return Response(
+                    {'detail': 'Рецепт не найден в корзине'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            shopping_cart_item.delete()
+            return Response(
+                {'detail': 'Рецепт удален из корзины'},
+                status=status.HTTP_204_NO_CONTENT
+            )
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def download_shopping_cart(self, request):
+        """Скачивание списка покупок в формате CSV."""
+        # Получаем все рецепты в корзине пользователя
+        shopping_cart_recipes = Recipe.objects.filter(
+            added_to_carts__user=request.user
+        )
+        
+        # Получаем все ингредиенты из этих рецептов с суммированием количества
+        ingredients = IngredientsInRecipe.objects.filter(
+            recipe__in=shopping_cart_recipes
+        ).values(
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(total_amount=Sum('amount'))
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="shopping_cart.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['Ингредиент', 'Количество', 'Единица измерения'])
+        
+        for item in ingredients:
+            writer.writerow([
+                item['ingredient__name'],
+                item['total_amount'],
+                item['ingredient__measurement_unit']
+            ])
+        
+        return response
+    
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    def favorite(self, request, pk=None):
+        """Добавление/удаление рецепта в избранное."""
+        recipe = self.get_object()
+        user = request.user
+
+        if request.method == 'POST':
+            if FavoriteRecipe.objects.filter(user=user, recipe=recipe).exists():
+                return Response(
+                    {'detail': 'Рецепт уже в избранном'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            FavoriteRecipe.objects.create(user=user, recipe=recipe)
+            serializer = UniversalRecipeSerializer(recipe, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            favorite_item = FavoriteRecipe.objects.filter(user=user, recipe=recipe).first()
+            if not favorite_item:
+                return Response(
+                    {'detail': 'Рецепт не найден в избранном'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            favorite_item.delete()
+            return Response(
+                {'detail': 'Рецепт удален из избранного'},
+                status=status.HTTP_204_NO_CONTENT
+            )
 
 
-class FavoriteViewSet(viewsets.ModelViewSet):
-    pass
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def recipe_get_link(request, id):
+    """Генерирует code."""
+    recipe = get_object_or_404(Recipe, id=id)
+
+    if not recipe.code:
+        with transaction.atomic():
+            code = uuid.uuid4().hex[:6]
+            try:
+                recipe.code = code
+                recipe.save()
+            except IntegrityError:
+                code = uuid.uuid4().hex[:6]
+                recipe.code = code
+                recipe.save()
+
+    short_url = request.build_absolute_uri(
+        reverse('api:recipe_short', kwargs={'code': recipe.code}))
+    return JsonResponse({'short-link': short_url})
+
+
+def redirect_to_recipe(request, code):
+    """Перенаправляет на рецепт по короткой ссылке"""
+    recipe = get_object_or_404(Recipe, code=code)
+    return redirect('api:recipe_detail', id=recipe.id)
