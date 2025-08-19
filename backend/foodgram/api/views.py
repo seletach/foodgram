@@ -115,11 +115,13 @@ class CustomUserViewSet(UserViewSet):
 
 
 class AvatarViewSet(viewsets.ViewSet):
-    """
-    ViewSet для редактирования или удаления аватара пользователя.
+    """_summary_
+
+    Args:
+        viewsets (_type_): _description_
     """
 
-    def get_object(self):
+    def get_object(self):  
         return self.request.user
 
     def update(self, request, pk=None):
@@ -142,11 +144,28 @@ class AvatarViewSet(viewsets.ViewSet):
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """Информация о тегах, только чтение.
+
+    Предоставляет endpoints:
+    - 'GET /api/tags/' - список всех тегов.
+    - 'GET /api/tags/<int:id>/' - информация о теге.
+    """
+
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """Информация об ингредиентах, только чтение.
+
+    Предоставляет endpoints:
+    - 'GET /api/ingredients/' - список всех ингредиентов.
+    - 'GET /api/ingredients/<int:id>/' - информация об ингредиенте.
+
+    Фильтрация:
+    - По началу названия, регистрозависимо: '?name=<str:name>'
+    """
+
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = (filters.DjangoFilterBackend,)
@@ -154,6 +173,32 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    """CRUD для рецетов.
+
+    Предоставляет endpoints:
+    - 'GET /api/recipes/' - список всех рецептов.
+    - 'POST /api/recipes/' - создание рецепта.
+    - 'GET /api/recipes/<int:id>/' - информация о рецепте.
+    - 'PATCH /api/recipes/<int:id>/' - редактирование рецепта.
+    - 'DELETE /api/recipes/<int:id>/' - удаление рецепта.
+
+    Дополнительные actions:
+    - 'POST/DELETE /api/recipes/<int:id>/favorite/' - добавление рецепта в избранное.
+    - 'POST/DELETE /api/recipes/<int:id>/shopping_cart/' - добавление рецепта в корзину.
+    - 'GET /api/recipes/download_shopping_cart/' - скачивание рецепта.
+
+    Фильтрация:
+    - По тегам: '?tags=<slug:name_1>, <slug:name_2>'
+    - По author_id: '?author=<int:id>'
+    - По избранным: '?is_favorited=True/False'
+    - По наличию в корзине: '?is_in_shopping_cart=True/False'
+
+    Permissions:
+    - Создание: Только аутентифицированные пользователи
+    - Изменение/удаление: Только автор рецепта
+    - Фильтры is_favorited и is_in_shopping_cart: Только для аутентифицированных
+    """
+
     queryset = Recipe.objects.all()
     pagination_class = CustomPagination
     filter_backends = (filters.DjangoFilterBackend,)
@@ -339,8 +384,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
-    def favorite(self, request, pk=None):
-        """Добавление/удаление рецепта в избранное."""
+    def favorite(self, request, pk=None):      
         recipe = self.get_object()
         user = request.user
 
