@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect
 from djoser.views import UserViewSet
 from django.urls import reverse
 from rest_framework import status,viewsets
+from django_filters import rest_framework as filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import (
     AllowAny,
@@ -16,7 +17,7 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 
-from api.filters import RecipeFilter
+from api.filters import RecipeFilter, IngredientFilter
 from api.pagination import CustomPagination
 from api.serializers import (
     AvatarSerializer,
@@ -41,6 +42,7 @@ paginator = CustomPagination()
 
 logger = logging.getLogger(__name__)
 
+# ДОБАВИТЬ КОНСТАНТЫ
 
 class CustomUserViewSet(UserViewSet):
     """Вьюсет для объекта пользователя:
@@ -143,11 +145,15 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = IngredientFilter
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     pagination_class = CustomPagination
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -192,6 +198,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        if instance.author != request.user:
+            return Response(
+                {'detail': 'Вы не являетесь автором этого рецепта и не можете его редактировать.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
         serializer.is_valid(raise_exception=True)
         
@@ -229,6 +240,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        if instance.author != request.user:
+            return Response(
+                {'detail': 'Вы не являетесь автором этого рецепта и не можете его удалить.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         try:
             with transaction.atomic():
                 instance.ingredients_in_recipe.all().delete()
@@ -276,12 +292,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
         """Скачивание списка покупок в формате CSV."""
-        # Получаем все рецепты в корзине пользователя
         shopping_cart_recipes = Recipe.objects.filter(
             added_to_carts__user=request.user
         )
-        
-        # Получаем все ингредиенты из этих рецептов с суммированием количества
+
         ingredients = IngredientsInRecipe.objects.filter(
             recipe__in=shopping_cart_recipes
         ).values(
@@ -352,7 +366,7 @@ def recipe_get_link(request, id):
                 recipe.save()
 
     short_url = request.build_absolute_uri(
-        reverse('api:recipe_short', kwargs={'code': recipe.code}))
+        reverse('recipe_short', kwargs={'code': recipe.code}))
     return JsonResponse({'short-link': short_url})
 
 

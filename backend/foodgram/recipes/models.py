@@ -62,8 +62,7 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         verbose_name='Название рецепта',
-        max_length=256,
-        help_text='Не более 50 символов',
+        max_length=256
     )
     text = models.TextField(verbose_name='Описание рецепта')
     created = models.DateTimeField(

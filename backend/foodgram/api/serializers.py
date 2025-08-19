@@ -98,12 +98,9 @@ class IngredientInRecipeWriteSerializer(ModelSerializer):
 
 
 class IngredientsInRecipeSerializer(ModelSerializer):
-    # id - чей id, либо цифра ингредиента лежащего в БД ингредиентов, либо порядок в котором ингредиенты лежат в рецепте !?
     name = serializers.CharField(source='ingredient.name')
     measurement_unit = serializers.CharField(source='ingredient.measurement_unit')
-    # amount = serializers.IntegerField()
     id = serializers.ReadOnlyField(source='ingredient.id')
-
 
     class Meta:
         model = IngredientsInRecipe
@@ -172,6 +169,13 @@ class CreateRecipeSerializer(ModelSerializer):
 
     def to_internal_value(self, data):
         return super().to_internal_value(data)
+    
+    def validate(self, data):
+        if 'ingredients' not in data:
+            raise serializers.ValidationError({'ingredients': 'Это поле обязательно.'})
+        if 'tags' not in data:
+            raise serializers.ValidationError({'tags': 'Это поле обязательно.'})
+        return data
 
     def validate_ingredients(self, value):
         if not value:
@@ -186,7 +190,18 @@ class CreateRecipeSerializer(ModelSerializer):
             if item['amount'] <= 0:
                 raise serializers.ValidationError('Количество должно быть больше 0.')
         return value
-    
+
+    def validate_tags(self, value):
+        if not value:
+            raise serializers.ValidationError('Должен быть хотя бы один тег.')
+
+        tag_ids = []
+        for tag in value:
+            if tag.id in tag_ids:
+                raise serializers.ValidationError('Теги не должны повторяться.')
+            tag_ids.append(tag.id)
+        return value
+
     def to_representation(self, instance):
         return RecipeSerializer(instance, context=self.context).data
 
