@@ -3,8 +3,6 @@ import logging
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
-from django.db import transaction
 
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
@@ -22,6 +20,7 @@ from users.models import CustomUser, Subscription
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
+
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
@@ -99,7 +98,8 @@ class IngredientInRecipeWriteSerializer(ModelSerializer):
 
 class IngredientsInRecipeSerializer(ModelSerializer):
     name = serializers.CharField(source='ingredient.name')
-    measurement_unit = serializers.CharField(source='ingredient.measurement_unit')
+    measurement_unit = serializers.CharField(
+        source='ingredient.measurement_unit')
     id = serializers.ReadOnlyField(source='ingredient.id')
 
     class Meta:
@@ -132,7 +132,8 @@ class RecipeSerializer(ModelSerializer):
 
     def get_ingredients(self, obj):
         ingredients_in_recipe = obj.ingredients_in_recipe.all()
-        return IngredientsInRecipeSerializer(ingredients_in_recipe, many=True).data
+        return IngredientsInRecipeSerializer(ingredients_in_recipe,
+                                             many=True).data
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
@@ -152,9 +153,11 @@ class RecipeSerializer(ModelSerializer):
 
 
 class CreateRecipeSerializer(ModelSerializer):
-    ingredients = IngredientInRecipeWriteSerializer(many=True, write_only=True)
+    ingredients = IngredientInRecipeWriteSerializer(many=True,
+                                                    write_only=True)
     image = Base64ImageField(allow_null=True)
-    tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
+    tags = serializers.PrimaryKeyRelatedField(many=True,
+                                              queryset=Tag.objects.all())
 
     class Meta:
         model = Recipe
@@ -169,36 +172,43 @@ class CreateRecipeSerializer(ModelSerializer):
 
     def to_internal_value(self, data):
         return super().to_internal_value(data)
-    
+
     def validate(self, data):
         if 'ingredients' not in data:
-            raise serializers.ValidationError({'ingredients': 'Это поле обязательно.'})
+            raise serializers.ValidationError(
+                {'ingredients': 'Это поле обязательно.'})
         if 'tags' not in data:
-            raise serializers.ValidationError({'tags': 'Это поле обязательно.'})
+            raise serializers.ValidationError(
+                {'tags': 'Это поле обязательно.'})
         return data
 
     def validate_ingredients(self, value):
         if not value:
-            raise serializers.ValidationError('Должен быть хотя бы один ингредиент.')
+            raise serializers.ValidationError(
+                'Должен быть хотя бы один ингредиент.')
 
         ingredients = []
         for item in value:
             ingredient = item['id']
             if ingredient in ingredients:
-                raise serializers.ValidationError('Ингредиенты не должны повторяться.')
+                raise serializers.ValidationError(
+                    'Ингредиенты не должны повторяться.')
             ingredients.append(ingredient)
             if item['amount'] <= 0:
-                raise serializers.ValidationError('Количество должно быть больше 0.')
+                raise serializers.ValidationError(
+                    'Количество должно быть больше 0.')
         return value
 
     def validate_tags(self, value):
         if not value:
-            raise serializers.ValidationError('Должен быть хотя бы один тег.')
+            raise serializers.ValidationError(
+                'Должен быть хотя бы один тег.')
 
         tag_ids = []
         for tag in value:
             if tag.id in tag_ids:
-                raise serializers.ValidationError('Теги не должны повторяться.')
+                raise serializers.ValidationError(
+                    'Теги не должны повторяться.')
             tag_ids.append(tag.id)
         return value
 
@@ -234,16 +244,26 @@ class SubscriptionSerializer(CustomUserSerializer):
     recipes_count = SerializerMethodField()
 
     class Meta(CustomUserSerializer.Meta):
-        fields = CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count')
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'avatar',
+            'recipes',
+            'recipes_count'
+        )
 
     def get_recipes(self, obj):
         request = self.context.get('request')
         recipes_limit = request.query_params.get('recipes_limit')
         queryset = obj.recipes.all()
-        
+
         if recipes_limit:
             queryset = queryset[:int(recipes_limit)]
-            
+
         serializer = UniversalRecipeSerializer(
             queryset,
             many=True,

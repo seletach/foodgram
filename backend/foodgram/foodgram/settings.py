@@ -19,7 +19,7 @@ LOGGING = {
     'version': 1,
 
     'disable_existing_loggers': False,
-    
+
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
@@ -129,7 +129,7 @@ DJOSER = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-if DEBUG == True:
+if DEBUG:
     ENGINE_DATABASE = 'sqlite3'
 else:
     ENGINE_DATABASE = 'postgresql'
