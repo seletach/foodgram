@@ -269,6 +269,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
+    def get_permissions(self):
+        """Определение permissions для разных actions.
+        
+        Returns:
+            list: Список permission классов
+        """
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
     def get_serializer_class(self):
         """Выбор serializer класса в зависимости от action.
 
