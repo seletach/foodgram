@@ -270,11 +270,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_permissions(self):
-        """Определение permissions для разных actions.
-        
-        Returns:
-            list: Список permission классов
-        """
+        """Определение permissions для разных actions."""
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         return [IsAuthenticated()]
