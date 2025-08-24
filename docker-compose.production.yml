@@ -16,7 +16,7 @@ services:
 
   backend:
     container_name: foodgram_backend_container
-    image: seletach/foodgram_backend
+    image: seletach/foodgram_backend:v2
     env_file: .env
     volumes:
       - static:/static/

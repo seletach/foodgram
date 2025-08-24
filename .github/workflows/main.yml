@@ -47,7 +47,7 @@ jobs:
         with:
           context: ./backend/foodgram/
           push: true
-          tags: seletach/foodgram_backend:latest
+          tags: seletach/foodgram_backend:v2
 
   build_frontend_and_push_to_docker_hub:
     runs-on: ubuntu-latest
@@ -133,3 +133,5 @@ jobs:
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
           sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /app/data/static/
+
+          sudo docker compose -f docker-compose.production.yml exec backend python import_data.py

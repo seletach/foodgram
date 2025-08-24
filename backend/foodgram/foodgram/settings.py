@@ -194,4 +194,7 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 PAGE_SIZE = 6
 
-CSRF_TRUSTED_ORIGINS = os.getenv('SITE_URL').split()
+DOMAIN = os.getenv('DOMAIN')
+
+CSRF_TRUSTED_ORIGINS = (f'https://{DOMAIN}',
+                        f'http://{DOMAIN}')
