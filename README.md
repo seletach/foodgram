@@ -55,4 +55,4 @@
    - Документация API доступна по адресу: http://localhost:8080/api/docs/
    - API доступна по адресу: http://localhost:8080/api/
 7. **Адрес Проекта**
-   - https://foodgram-seletach.zapto.org/recipes
+   - https://seletach.ru/
