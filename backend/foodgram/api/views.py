@@ -18,7 +18,7 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 
 from api.filters import RecipeFilter, IngredientFilter
-from api.pagination import CustomPagination
+from api.pagination import Pagination
 from api.serializers import (
     AvatarSerializer,
     TagSerializer,
@@ -38,7 +38,7 @@ from recipes.models import (
 )
 from users.models import Subscription, CustomUser
 
-paginator = CustomPagination()
+paginator = Pagination()
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class CustomUserViewSet(UserViewSet):
     """
 
     queryset = CustomUser.objects.all()
-    pagination_class = CustomPagination
+    pagination_class = Pagination
 
     def get_permissions(self):
         """Определение permissions для разных actions.
@@ -265,7 +265,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Recipe.objects.all()
-    pagination_class = CustomPagination
+    pagination_class = Pagination
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
