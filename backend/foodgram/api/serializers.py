@@ -41,7 +41,7 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class CustomUserSerializer(ModelSerializer):
+class UserSerializer(ModelSerializer):
     """Сериализатор для модели пользователя с информацией о подписке."""
 
     is_subscribed = serializers.SerializerMethodField()
@@ -82,7 +82,7 @@ class AvatarSerializer(ModelSerializer):
     avatar = Base64ImageField()
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = ('avatar',)
 
     def validate(self, attrs):
@@ -158,7 +158,7 @@ class RecipeSerializer(ModelSerializer):
     """Сериализатор для чтения рецептов с дополнительными полями."""
 
     tags = TagSerializer(many=True)
-    author = CustomUserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
     ingredients = IngredientsInRecipeSerializer(many=True,
                                                 source='ingredients_in_recipe')
     is_favorited = serializers.SerializerMethodField()
@@ -304,13 +304,13 @@ class UniversalRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class SubscriptionSerializer(CustomUserSerializer):
+class SubscriptionSerializer(UserSerializer):
     """Сериализатор для подписок с информацией о рецептах автора."""
 
     recipes = SerializerMethodField()
     recipes_count = SerializerMethodField()
 
-    class Meta(CustomUserSerializer.Meta):
+    class Meta(UserSerializer.Meta):
         fields = (
             'email',
             'id',
