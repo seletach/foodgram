@@ -278,6 +278,17 @@ class CreateRecipeSerializer(ModelSerializer):
             )
 
         return data
+    
+    @staticmethod
+    def _create_ingredients(recipe, ingredients_data):
+        """Создание ингредиентов для рецепта."""
+        IngredientsInRecipe.objects.bulk_create([
+            IngredientsInRecipe(
+                recipe=recipe,
+                ingredient=item['id'],
+                amount=item['amount']
+            ) for item in ingredients_data
+        ])
 
     def create(self, validated_data):
         """Создание нового рецепта."""
@@ -288,13 +299,7 @@ class CreateRecipeSerializer(ModelSerializer):
 
         recipe.tags.set(tags_data)
 
-        IngredientsInRecipe.objects.bulk_create([
-            IngredientsInRecipe(
-                recipe=recipe,
-                ingredient=item['id'],
-                amount=item['amount']
-            ) for item in ingredients_data
-        ])
+        self._create_ingredients(recipe, ingredients_data)
 
         return recipe
 
@@ -312,13 +317,7 @@ class CreateRecipeSerializer(ModelSerializer):
 
         if ingredients_data is not None:
             instance.ingredients_in_recipe.all().delete()
-            IngredientsInRecipe.objects.bulk_create([
-                IngredientsInRecipe(
-                    recipe=instance,
-                    ingredient=item['id'],
-                    amount=item['amount']
-                ) for item in ingredients_data
-            ])
+            self._create_ingredients(instance, ingredients_data)
 
         return instance
 

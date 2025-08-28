@@ -288,20 +288,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        elif request.method == 'DELETE':
-            shopping_cart_item = ShoppingCart.objects.filter(
-                user=user,
-                recipe=recipe).first()
-            if not shopping_cart_item:
-                return Response(
-                    {'detail': 'Рецепт не найден в корзине'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            shopping_cart_item.delete()
+        shopping_cart_item = ShoppingCart.objects.filter(user=user,
+                                                         recipe=recipe)
+        if not shopping_cart_item:
             return Response(
-                {'detail': 'Рецепт удален из корзины'},
-                status=status.HTTP_204_NO_CONTENT
+                {'detail': 'Рецепт не найден в корзине'},
+                status=status.HTTP_400_BAD_REQUEST
             )
+        shopping_cart_item.delete()
+        return Response(
+            {'detail': 'Рецепт удален из корзины'},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
     @action(detail=False,
             methods=['get'],
