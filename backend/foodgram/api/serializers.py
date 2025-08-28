@@ -279,6 +279,49 @@ class CreateRecipeSerializer(ModelSerializer):
 
         return data
 
+    def create(self, validated_data):
+        """Создание нового рецепта."""
+        ingredients_data = validated_data.pop('ingredients')
+        tags_data = validated_data.pop('tags')
+
+        recipe = Recipe.objects.create(**validated_data)
+
+        recipe.tags.set(tags_data)
+
+        IngredientsInRecipe.objects.bulk_create([
+            IngredientsInRecipe(
+                recipe=recipe,
+                ingredient=item['id'],
+                amount=item['amount']
+            ) for item in ingredients_data
+        ])
+
+        return recipe
+
+    def update(self, instance, validated_data):
+        """Обновление существующего рецепта."""
+        ingredients_data = validated_data.pop('ingredients', None)
+        tags_data = validated_data.pop('tags', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if tags_data is not None:
+            instance.tags.set(tags_data)
+
+        if ingredients_data is not None:
+            instance.ingredients_in_recipe.all().delete()
+            IngredientsInRecipe.objects.bulk_create([
+                IngredientsInRecipe(
+                    recipe=instance,
+                    ingredient=item['id'],
+                    amount=item['amount']
+                ) for item in ingredients_data
+            ])
+
+        return instance
+
     def to_representation(self, instance):
         """Преобразование объекта в сериализованное представление.
 
