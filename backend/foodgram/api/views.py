@@ -27,6 +27,7 @@ from api.serializers import (
     UniversalRecipeSerializer,
     SubscriptionSerializer,
     IngredientSerializer,
+    SubscriptionCreateSerializer
 )
 from recipes.models import (
     Tag,
@@ -43,7 +44,7 @@ paginator = Pagination()
 logger = logging.getLogger(__name__)
 
 
-class CustomUserViewSet(UserViewSet):
+class UserViewSet(UserViewSet):
     """CRUD для пользователей, наследуется от Djoser UserViewSet.
 
     Предоставляет endpoints:
@@ -103,107 +104,72 @@ class CustomUserViewSet(UserViewSet):
         return paginator.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated])
+        permission_classes=[IsAuthenticated])
     def subscribe(self, request, id=None):
-        """Подписка/отписка на пользователя.
-
-        Args:
-            request: HTTP запрос
-            id: ID автора для подписки/отписки
-
-        Returns:
-            Response: Результат операции подписки/отписки
-        """
+        """Подписка/отписка на пользователя."""
         author = get_object_or_404(CustomUser, id=id)
         user = request.user
 
         if request.method == 'POST':
-            if user == author:
-                return Response(
-                    {'detail': 'Нельзя подписаться на самого себя'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if Subscription.objects.filter(subscriber=user,
-                                           author=author).exists():
-                return Response(
-                    {'detail': 'Вы уже подписаны на этого пользователя'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            serializer = SubscriptionCreateSerializer(
+                data={'subscriber': user.id, 'author': author.id},
+                context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
 
-            Subscription.objects.create(subscriber=user, author=author)
+            serializer.save()
+
             serializer = SubscriptionSerializer(
                 author,
                 context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        elif request.method == 'DELETE':
-            subscription = Subscription.objects.filter(subscriber=user,
-                                                       author=author).first()
-            if not subscription:
-                return Response(
-                    {'detail': 'Вы не подписаны на этого пользователя'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            subscription.delete()
+        subscription = Subscription.objects.filter(subscriber=user,
+                                                   author=author)
+        if not subscription:
             return Response(
-                {'detail': 'Вы успешно отписались'},
-                status=status.HTTP_204_NO_CONTENT
+                {'detail': 'Вы не подписаны на этого пользователя'},
+                status=status.HTTP_400_BAD_REQUEST
             )
-
-
-class AvatarViewSet(viewsets.ViewSet):
-    """Управление аватаром пользователя.
-
-    Предоставляет endpoints:
-    - 'PATCH /api/avatars/<int:pk>/' - обновление аватара.
-    - 'DELETE /api/avatars/<int:pk>/' - удаление аватара.
-
-    Permissions:
-    - Изменение/удаление: Только владелец аккаунта
-    """
-
-    def get_object(self):
-        """Получение объекта пользователя.
-
-        Returns:
-            CustomUser: Текущий аутентифицированный пользователь
-        """
-        return self.request.user
-
-    def update(self, request, pk=None):
-        """Обновление аватара.
-
-        Args:
-            request: HTTP запрос с данными аватара
-            pk: ID пользователя (не используется)
-
-        Returns:
-            Response: Обновленные данные пользователя или ошибки
-        """
-        user = self.get_object()
-        serializer = AvatarSerializer(
-            user, data=request.data, partial=True, context={'request': request}
+        subscription.delete()
+        return Response(
+            {'detail': 'Вы успешно отписались'},
+            status=status.HTTP_204_NO_CONTENT
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def destroy(self, request, pk=None):
-        """Удаление аватара.
+    @action(detail=False, methods=['put', 'delete'],
+            permission_classes=[IsAuthenticated], url_path='me/avatar')
+    def avatar(self, request):
+        """Управление аватаром пользователя через кастомный эндпоинт /users/me/avatar/."""
+        user = request.user
 
-        Args:
-            request: HTTP запрос
-            pk: ID пользователя (не используется)
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(
+                user, data=request.data, partial=True, context={'request': request}
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        Returns:
-            Response: Пустой ответ с статусом 204
-        """
-        user = self.get_object()
-        user.avatar.delete()
-        user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        elif request.method == 'DELETE':
+            if user.avatar:
+                user.avatar.delete()
+                user.save()
+                return Response(
+                    {'detail': 'Аватар успешно удален'},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response(
+                    {'detail': 'Аватар не найден'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        return Response(
+            {'detail': 'Метод не разрешен'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

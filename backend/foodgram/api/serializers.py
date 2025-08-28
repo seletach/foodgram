@@ -85,7 +85,7 @@ class AvatarSerializer(ModelSerializer):
         model = User
         fields = ('avatar',)
 
-    def validate(self, attrs):
+    def validate(self, data):
         """Валидация данных аватара.
 
         Args:
@@ -97,11 +97,11 @@ class AvatarSerializer(ModelSerializer):
         Raises:
             ValidationError: Если поле avatar отсутствует
         """
-        if 'avatar' not in attrs:
+        if 'avatar' not in data:
             raise serializers.ValidationError(
                 {'detail': 'Поле avatar не может быть пустым'}
             )
-        return super().validate(attrs)
+        return data
 
 
 class TagSerializer(ModelSerializer):
@@ -356,3 +356,32 @@ class SubscriptionSerializer(UserSerializer):
             int: Количество рецептов
         """
         return obj.recipes.count()
+
+
+class SubscriptionCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания подписки."""
+
+    class Meta:
+        model = Subscription
+        fields = ('subscriber', 'author')
+
+    def validate(self, data):
+        """Валидация данных подписки."""
+        subscriber = data['subscriber']
+        author = data['author']
+
+        if subscriber == author:
+            raise serializers.ValidationError(
+                {'detail': 'Нельзя подписаться на самого себя'}
+            )
+
+        if Subscription.objects.filter(subscriber=subscriber, author=author).exists():
+            raise serializers.ValidationError(
+                {'detail': 'Вы уже подписаны на этого пользователя'}
+            )
+
+        return data
+    
+    def create(self, validated_data):
+        """Создание подписки."""
+        return Subscription.objects.create(**validated_data)
