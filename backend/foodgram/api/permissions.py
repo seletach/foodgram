@@ -2,7 +2,7 @@ from rest_framework.permissions import BasePermission
 
 
 class IsRecipeAuthor(BasePermission):
-    """Разрешение, позволяющее только автору рецепта редактировать или удалять его."""
+    """Только автор может удалять удалять или изменять рецепт."""
 
     def has_object_permission(self, request, view, obj):
         """Проверка, является ли пользователь автором рецепта."""
