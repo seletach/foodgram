@@ -2,6 +2,9 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
+from foodgram.constants import (MAX_LENGHT_TAG,
+                                MAX_LENGHT_INGREDIENT)
+
 User = get_user_model()
 
 
@@ -10,13 +13,13 @@ class Tag(models.Model):
 
     name = models.CharField(
         verbose_name='Название тега',
-        max_length=32,
+        max_length=MAX_LENGHT_TAG,
         help_text='Не более 32 символов',
         unique=True,
     )
     slug = models.SlugField(
         verbose_name='Название slug',
-        max_length=32,
+        max_length=MAX_LENGHT_TAG,
         help_text='slug должен быть уникальным',
         unique=True,
     )
@@ -34,12 +37,12 @@ class Ingredient(models.Model):
 
     name = models.CharField(
         verbose_name='Название ингредиента',
-        max_length=50,
+        max_length=MAX_LENGHT_INGREDIENT,
         help_text='Не более 50 символов',
     )
     measurement_unit = models.CharField(
         verbose_name='Единица измерения',
-        max_length=50,
+        max_length=MAX_LENGHT_INGREDIENT,
         help_text='Не более 50 символов',
     )
 
@@ -118,7 +121,7 @@ class IngredientsInRecipe(models.Model):
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
-        # validators=[MinValueValidator(1), MaxValueValidator(30)]
+        validators=[MinValueValidator(1)]
     )
 
     class Meta:

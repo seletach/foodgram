@@ -423,7 +423,7 @@ class SubscriptionCreateSerializer(serializers.ModelSerializer):
             )
 
         return data
-    
+
     def create(self, validated_data):
         """Создание подписки."""
         return Subscription.objects.create(**validated_data)

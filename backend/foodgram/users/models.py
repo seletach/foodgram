@@ -1,15 +1,16 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from foodgram.constants import MAX_LENGHT_NAME, MAX_LENGHT_EMAIL
 
 class CustomUser(AbstractUser):
     """Расширение модели пользователя."""
 
-    first_name = models.CharField(max_length=150,
+    first_name = models.CharField(max_length=MAX_LENGHT_NAME,
                                   verbose_name='Имя')
-    last_name = models.CharField(max_length=150,
+    last_name = models.CharField(max_length=MAX_LENGHT_NAME,
                                  verbose_name='Фамилия')
-    email = models.EmailField(max_length=254,
+    email = models.EmailField(max_length=MAX_LENGHT_EMAIL,
                               unique=True,
                               verbose_name='Электронная почта')
     avatar = models.ImageField(

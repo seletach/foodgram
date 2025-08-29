@@ -192,8 +192,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-PAGE_SIZE = 6
-
 DOMAIN = os.getenv('DOMAIN')
 
 CSRF_TRUSTED_ORIGINS = (f'https://{DOMAIN}',
