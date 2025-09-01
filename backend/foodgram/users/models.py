@@ -4,7 +4,7 @@ from django.db import models
 
 from foodgram.constants import MAX_LENGHT_NAME, MAX_LENGHT_EMAIL
 
-class CustomUser(AbstractUser):
+class User(AbstractUser):
     """Расширение модели пользователя."""
 
     first_name = models.CharField(max_length=MAX_LENGHT_NAME,
@@ -35,13 +35,13 @@ class Subscription(models.Model):
     """Подписки пользователя на других пользователей."""
 
     author = models.ForeignKey(
-        CustomUser,
+        User,
         verbose_name='Автор',
         on_delete=models.CASCADE,
         related_name='subscriptions'
     )
     subscriber = models.ForeignKey(
-        CustomUser,
+        User,
         verbose_name='Подписчик',
         related_name='subscriber',
         on_delete=models.CASCADE,

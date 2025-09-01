@@ -2,6 +2,7 @@ import csv
 import uuid
 import logging
 
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Sum
 from django.http import HttpResponse, JsonResponse
@@ -39,9 +40,11 @@ from recipes.models import (
     FavoriteRecipe,
     ShoppingCart,
 )
-from users.models import Subscription, CustomUser
+from users.models import Subscription
 
 paginator = Pagination()
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +73,7 @@ class UserViewSet(UserViewSet):
     - Подписки: Только аутентифицированные пользователи
     """
 
-    queryset = CustomUser.objects.all()
+    queryset = User.objects.all()
     pagination_class = Pagination
 
     def get_permissions(self):
@@ -92,7 +95,7 @@ class UserViewSet(UserViewSet):
             Response: Пагинированный список авторов с количеством рецептов
         """
         user = request.user
-        subscribed_authors = CustomUser.objects.filter(
+        subscribed_authors = User.objects.filter(
             subscriptions__subscriber=user
         ).annotate(recipes_count=Count('recipes'))
 
@@ -109,7 +112,7 @@ class UserViewSet(UserViewSet):
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, id=None):
         """Подписка/отписка на пользователя."""
-        author = get_object_or_404(CustomUser, id=id)
+        author = get_object_or_404(User, id=id)
         user = request.user
 
         if request.method == 'POST':
