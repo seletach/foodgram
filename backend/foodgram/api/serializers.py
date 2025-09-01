@@ -167,7 +167,8 @@ class RecipeSerializer(ModelSerializer):
         request = self.context.get('request')
         if request.user.is_anonymous:
             return False
-        return obj.recipes_favoriterecipe_by_recipe.filter(user=request.user).exists() # favorited_by
+        return obj.recipes_favoriterecipe_by_recipe.filter(user=request.user
+                                                           ).exists()
 
     def get_is_in_shopping_cart(self, obj):
         """Проверка наличия рецепта в корзине покупок у текущего пользователя.
@@ -175,7 +176,8 @@ class RecipeSerializer(ModelSerializer):
         request = self.context.get('request')
         if request.user.is_anonymous:
             return False
-        return obj.recipes_shoppingcart_by_recipe.filter(user=request.user).exists() # added_to_carts
+        return obj.recipes_shoppingcart_by_recipe.filter(user=request.user
+                                                         ).exists()
 
 
 class CreateRecipeSerializer(ModelSerializer):

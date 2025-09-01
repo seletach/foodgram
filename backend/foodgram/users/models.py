@@ -4,6 +4,7 @@ from django.db import models
 
 from foodgram.constants import MAX_LENGHT_NAME, MAX_LENGHT_EMAIL
 
+
 class User(AbstractUser):
     """Расширение модели пользователя."""
 
@@ -51,7 +52,7 @@ class Subscription(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         unique_together = ['subscriber', 'author']
-    
+
     def clean(self):
         """Валидация подписки на себя."""
         if self.subscriber == self.author:

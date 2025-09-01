@@ -136,23 +136,23 @@ class IngredientsInRecipe(models.Model):
 
 class UserRecipeRelation(models.Model):
     """Базовый класс для связи пользователь-рецепт."""
-    
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='%(app_label)s_%(class)s_by_user' 
+        related_name='%(app_label)s_%(class)s_by_user'
         # recipes_shoppingcart_by_user | recipes_favoriterecipe_by_user
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='%(app_label)s_%(class)s_by_recipe' 
+        related_name='%(app_label)s_%(class)s_by_recipe'
         # recipes_shoppingcart_by_recipe | recipes_favoriterecipe_by_recipe
     )
     created = models.DateTimeField(
-        verbose_name='Дата добавления', 
+        verbose_name='Дата добавления',
         auto_now_add=True
     )
 
