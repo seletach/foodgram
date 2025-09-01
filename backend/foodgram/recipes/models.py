@@ -49,6 +49,7 @@ class Ingredient(models.Model):
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        unique_together = ['name', 'measurement_unit']
 
     def __str__(self):
         return self.name
@@ -127,54 +128,53 @@ class IngredientsInRecipe(models.Model):
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецептах'
+        unique_together = ['recipe', 'ingredient']
 
     def __str__(self):
         return f'{self.ingredient} {self.recipe}'
 
 
-class ShoppingCart(models.Model):
-    """Корзина покупок."""
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='Владелец корзины',
-        related_name='shopping_carts'
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-        related_name='added_to_carts'
-    )
-
-    class Meta:
-        verbose_name = 'Список покупок'
-        verbose_name_plural = 'Списки покупок'
-
-    def __str__(self):
-        return f'{self.user} {self.recipe}'
-
-
-class FavoriteRecipe(models.Model):
-    """Избранный рецепт."""
-
+class UserRecipeRelation(models.Model):
+    """Базовый класс для связи пользователь-рецепт."""
+    
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='favorite_recipes'
+        related_name='%(app_label)s_%(class)s_by_user' 
+        # recipes_shoppingcart_by_user | recipes_favoriterecipe_by_user
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='favorited_by'
+        related_name='%(app_label)s_%(class)s_by_recipe' 
+        # recipes_shoppingcart_by_recipe | recipes_favoriterecipe_by_recipe
+    )
+    created = models.DateTimeField(
+        verbose_name='Дата добавления', 
+        auto_now_add=True
     )
 
     class Meta:
-        verbose_name = 'Избранное'
-        verbose_name_plural = 'Избранное'
+        abstract = True
+        unique_together = ['user', 'recipe']
 
     def __str__(self):
         return f'{self.user} {self.recipe}'
+
+
+class ShoppingCart(UserRecipeRelation):
+    """Корзина покупок."""
+
+    class Meta(UserRecipeRelation.Meta):
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Списки покупок'
+
+
+class FavoriteRecipe(UserRecipeRelation):
+    """Избранный рецепт."""
+
+    class Meta(UserRecipeRelation.Meta):
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'

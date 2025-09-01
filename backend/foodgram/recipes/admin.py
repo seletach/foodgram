@@ -10,6 +10,17 @@ from recipes.models import (
 )
 
 
+class IngredientsInRecipeInline(admin.StackedInline):
+    """Inline для добавления ингредиентов в рецепт."""
+
+    model = IngredientsInRecipe
+    extra = 1
+    min_num = 2
+    verbose_name = 'Ингредиент'
+    verbose_name_plural = 'Ингредиенты'
+    autocomplete_fields = ['ingredient']
+
+
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     """Рецепты."""
@@ -19,16 +30,25 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ['tags']
     filter_horizontal = ['tags']
     exclude = ('code',)
+    inlines = [IngredientsInRecipeInline]
 
+    fieldsets = (
+        (None, {
+            'fields': ('author', 'name', 'text', 'cooking_time', 'image')
+        }),
+        ('Теги', {
+            'fields': ('tags',),
+            'description': 'Выберите не менее одного тега'
+        }),
+    )
+
+    @admin.display(description='Количество добавлений в избранное')
     def get_favorite_count(self, obj):
         return FavoriteRecipe.objects.filter(recipe=obj).count()
 
-    get_favorite_count.short_description = 'Количество добавлений в избранное'
-
+    @admin.display(description='Теги')
     def get_tags(self, obj):
-        return '\n'.join(obj.tags.values_list('name', flat=True))
-
-    get_tags.short_description = 'Теги'
+        return ' | '.join(obj.tags.values_list('name', flat=True))
 
 
 @admin.register(Ingredient)
@@ -36,6 +56,7 @@ class IngredientAdmin(admin.ModelAdmin):
     """Ингредиенты."""
 
     list_display = ('name', 'measurement_unit')
+    search_fields = ['name']
     search_fields = ['name']
 
 

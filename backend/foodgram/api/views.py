@@ -347,7 +347,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         """Скачивание списка покупок в формате CSV."""
         shopping_cart_recipes = Recipe.objects.filter(
-            added_to_carts__user=request.user
+            recipes_shoppingcart_by_recipe__user=request.user # !!!!!!!!
         )
 
         ingredients = IngredientsInRecipe.objects.filter(
