@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from foodgram.constants import MAX_LENGHT_NAME, MAX_LENGHT_EMAIL
@@ -49,6 +50,17 @@ class Subscription(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        unique_together = ['subscriber', 'author']
+    
+    def clean(self):
+        """Валидация подписки на себя."""
+        if self.subscriber == self.author:
+            raise ValidationError('Нельзя подписаться на самого себя.')
+
+    def save(self, *args, **kwargs):
+        """Переопределение save для вызова валидации."""
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.subscriber.username} подписан на {self.author.username}'
