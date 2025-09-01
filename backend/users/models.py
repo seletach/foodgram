@@ -33,20 +33,17 @@ class User(AbstractUser):
         return self.username
 
 
-User = get_user_model()
-
-
 class Subscription(models.Model):
     """Подписки пользователя на других пользователей."""
 
     author = models.ForeignKey(
-        User,
+        get_user_model(),
         verbose_name='Автор',
         on_delete=models.CASCADE,
         related_name='subscriptions'
     )
     subscriber = models.ForeignKey(
-        User,
+        get_user_model(),
         verbose_name='Подписчик',
         related_name='subscriber',
         on_delete=models.CASCADE,
