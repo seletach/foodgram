@@ -97,7 +97,9 @@ class UserViewSet(UserViewSet):
         user = request.user
         subscribed_authors = User.objects.filter(
             subscriptions__subscriber=user
-        ).annotate(recipes_count=Count('recipes'))
+        ).annotate(
+            recipes_count=Count('recipes')
+        )
 
         paginated_authors = paginator.paginate_queryset(subscribed_authors,
                                                         request)
@@ -124,8 +126,12 @@ class UserViewSet(UserViewSet):
 
             serializer.save()
 
+            author_with_count = User.objects.filter(id=author.id).annotate(
+            recipes_count=Count('recipes')
+            ).first()
+
             serializer = SubscriptionSerializer(
-                author,
+                author_with_count,
                 context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)

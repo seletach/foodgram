@@ -19,9 +19,6 @@ app_name = 'api'
 
 urlpatterns = [
     path('recipes/<int:id>/get-link/', recipe_get_link),
-    path('users/me/avatar/', UserViewSet.as_view(
-        {'put': 'avatar',
-         'delete': 'avatar'})),
     path('auth/', include('djoser.urls.authtoken')),
     path('', include(router.urls)),
 ]
