@@ -1,9 +1,8 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import Subscription
-
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -28,15 +27,15 @@ class UserAdmin(BaseUserAdmin):
     ordering = ['username']
     readonly_fields = ['date_joined', 'last_login']
 
+    @admin.display(description='Подписчики')
     def subscribers_count(self, obj):
         """Количество подписчиков пользователя."""
         return obj.subscriber.count()
-    subscribers_count.short_description = 'Подписчики'
 
+    @admin.display(description='Рецепты')
     def recipes_count(self, obj):
         """Количество рецептов пользователя."""
         return obj.recipes.count()
-    recipes_count.short_description = 'Рецепты'
 
 
 @admin.register(Subscription)

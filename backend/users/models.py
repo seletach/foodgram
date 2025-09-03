@@ -16,11 +16,7 @@ class User(AbstractUser):
     email = models.EmailField(max_length=MAX_LENGHT_EMAIL,
                               unique=True,
                               verbose_name='Электронная почта')
-    avatar = models.ImageField(
-        verbose_name='Аватар',
-        upload_to='user_images/',
-        blank=True
-    )
+    avatar = models.ImageField()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

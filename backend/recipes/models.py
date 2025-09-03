@@ -3,7 +3,9 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 from foodgram.constants import (MAX_LENGHT_TAG,
-                                MAX_LENGHT_INGREDIENT)
+                                MAX_LENGHT_INGREDIENT,
+                                MAX_LENGHT_RECIPE_NAME,
+                                MAX_LENGHT_RECIPE_CODE)
 
 User = get_user_model()
 
@@ -66,7 +68,7 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         verbose_name='Название рецепта',
-        max_length=256
+        max_length=MAX_LENGHT_RECIPE_NAME
     )
     text = models.TextField(verbose_name='Описание рецепта')
     created = models.DateTimeField(
@@ -90,10 +92,15 @@ class Recipe(models.Model):
         related_name='recipes'
     )
     image = models.ImageField(
-        verbose_name='Картинка', upload_to='recipe_images/', blank=True
+        verbose_name='Картинка',
+        upload_to='recipe_images/',
+        blank=True
     )
     code = models.CharField(
-        max_length=10, unique=True, blank=True, null=True
+        max_length=MAX_LENGHT_RECIPE_CODE,
+        unique=True,
+        blank=True,
+        null=True
     )
 
     class Meta:
