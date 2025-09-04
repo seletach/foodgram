@@ -12,6 +12,7 @@ from recipes.models import (
     Recipe,
     ShoppingCart,
     Tag,
+    FavoriteRecipe
 )
 from users.models import Subscription
 
@@ -158,8 +159,9 @@ class RecipeSerializer(ModelSerializer):
         """Проверка наличия рецепта в избранном у текущего пользователя."""
         request = self.context.get('request')
         try:
-            return obj.recipes_favoriterecipe_by_recipe.filter(user=request.user.id).exists()
-        except:
+            return obj.recipes_favoriterecipe_by_recipe.filter(
+                user=request.user.id).exists()
+        except Exception:
             return False
 
     def get_is_in_shopping_cart(self, obj):
@@ -167,8 +169,9 @@ class RecipeSerializer(ModelSerializer):
         """
         request = self.context.get('request')
         try:
-            return obj.recipes_shoppingcart_by_recipe.filter(user=request.user.id).exists()
-        except:
+            return obj.recipes_shoppingcart_by_recipe.filter(
+                user=request.user.id).exists()
+        except Exception:
             return False
 
 
@@ -323,10 +326,6 @@ class SubscriptionSerializer(UserSerializer):
         )
         return serializer.data
 
-    # def get_recipes_count(self, obj):
-    #     """Получение общего количества рецептов автора."""
-    #     return obj.recipes.count()
-
 
 class SubscriptionCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания подписки."""
@@ -375,4 +374,23 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
                 {'detail': 'Рецепт уже находится в корзине'}
             )
 
+        return data
+
+
+class FavoriteRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для избранных рецептов."""
+
+    class Meta:
+        model = FavoriteRecipe
+        fields = ('user', 'recipe')
+
+    def validate(self, data):
+        """Валидация данных избранного."""
+        user = data['user']
+        recipe = data['recipe']
+
+        if FavoriteRecipe.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError(
+                {'detail': 'Рецепт уже в избранном'}
+            )
         return data

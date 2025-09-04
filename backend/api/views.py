@@ -30,7 +30,8 @@ from api.serializers import (
     SubscriptionSerializer,
     IngredientSerializer,
     SubscriptionCreateSerializer,
-    ShoppingCartSerializer
+    ShoppingCartSerializer,
+    FavoriteRecipeSerializer
 )
 from recipes.models import (
     Tag,
@@ -127,7 +128,7 @@ class UserViewSet(UserViewSet):
             serializer.save()
 
             author_with_count = User.objects.filter(id=author.id).annotate(
-            recipes_count=Count('recipes')
+                recipes_count=Count('recipes')
             ).first()
 
             serializer = SubscriptionSerializer(
@@ -162,29 +163,23 @@ class UserViewSet(UserViewSet):
                 partial=True,
                 context={'request': request}
             )
-            if serializer.is_valid():
+            if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 return Response(serializer.data,
                                 status=status.HTTP_200_OK)
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-        elif request.method == 'DELETE':
-            if user.avatar:
-                user.avatar.delete()
-                user.save()
-                return Response(
-                    {'detail': 'Аватар успешно удален'},
-                    status=status.HTTP_204_NO_CONTENT
-                )
-            else:
-                return Response(
-                    {'detail': 'Аватар не найден'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+        if user.avatar:
+            user.avatar.delete()
+            user.save()
+            return Response(
+                {'detail': 'Аватар успешно удален'},
+                status=status.HTTP_204_NO_CONTENT
+            )
         return Response(
-            {'detail': 'Метод не разрешен'},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
+            {'detail': 'Аватар не найден'},
+            status=status.HTTP_404_NOT_FOUND
         )
 
 
@@ -252,20 +247,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     @staticmethod
-    def _add_to_relation(request, user, recipe, relation_model, error_message):
+    def _add_to_relation(request,
+                         user,
+                         recipe,
+                         serializer_class):
         """Статический метод для добавления в связь (избранное/корзина)."""
-        if relation_model.objects.filter(user=user, recipe=recipe).exists():
-            return (
-                {'detail': error_message},
-                status.HTTP_400_BAD_REQUEST
-            )
+        data = {'user': user.id, 'recipe': recipe.id}
+        serializer = serializer_class(data=data, context={'request': request})
 
-        relation_model.objects.create(user=user, recipe=recipe)
-        serializer = UniversalRecipeSerializer(
-            recipe,
-            context={'request': request}
-        )
-        return (serializer.data, status.HTTP_201_CREATED)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            recipe_serializer = UniversalRecipeSerializer(
+                recipe,
+                context={'request': request}
+            )
+            return Response(recipe_serializer.data,
+                            status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
     def _remove_from_relation(user,
@@ -274,22 +273,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
                               success_message,
                               error_message):
         """Статический метод для удаления из связи (избранное/корзина)."""
-        relation_item = relation_model.objects.filter(
-            user=user,
-            recipe=recipe
-        ).first()
+        deleted_count, _ = relation_model.objects.filter(
+            user=user, recipe=recipe
+        ).delete()
 
-        if not relation_item:
-            return (
-                {'detail': error_message},
-                status.HTTP_400_BAD_REQUEST
+        if deleted_count > 0:
+            return Response(
+                {'detail': success_message},
+                status=status.HTTP_204_NO_CONTENT
             )
-
-        relation_item.delete()
-        return (
-            {'detail': success_message},
-            status.HTTP_204_NO_CONTENT
-        )
+        else:
+            return Response(
+                {'detail': error_message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def get_permissions(self):
         """Определение permissions для разных actions."""
@@ -323,32 +320,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            data = {'user': user.id, 'recipe': recipe.id}
-            serializer = ShoppingCartSerializer(data=data,
-                                                context={'request': request})
-
-            if serializer.is_valid():
-                serializer.save()
-                serializer = UniversalRecipeSerializer(
-                    recipe,
-                    context={'request': request})
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            else:
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        elif request.method == 'DELETE':
-            result, status_code = self._remove_from_relation(
+            return self._add_to_relation(
+                request=request,
                 user=user,
                 recipe=recipe,
-                relation_model=ShoppingCart,
-                success_message='Рецепт удален из корзины',
-                error_message='Рецепт не найден в корзине'
+                serializer_class=ShoppingCartSerializer
             )
-            return Response(result, status=status_code)
+
+        return self._remove_from_relation(
+            user=user,
+            recipe=recipe,
+            relation_model=ShoppingCart,
+            success_message='Рецепт удален из корзины',
+            error_message='Рецепт не найден в корзине'
+        )
 
     @action(detail=False,
             methods=['get'],
@@ -382,7 +367,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return response
 
-    @action(detail=True, methods=['post', 'delete'],
+    @action(detail=True,
+            methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
     def favorite(self, request, pk=None):
         """Добавление/удаление рецепта в избранное."""
@@ -390,24 +376,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            result, status_code = self._add_to_relation(
+            return self._add_to_relation(
                 request=request,
                 user=user,
                 recipe=recipe,
-                relation_model=FavoriteRecipe,
-                error_message='Рецепт уже в избранном'
+                serializer_class=FavoriteRecipeSerializer
             )
-            return Response(result, status=status_code)
 
-        elif request.method == 'DELETE':
-            result, status_code = self._remove_from_relation(
-                user=user,
-                recipe=recipe,
-                relation_model=FavoriteRecipe,
-                success_message='Рецепт удален из избранного',
-                error_message='Рецепт не найден в избранном'
-            )
-            return Response(result, status=status_code)
+        return self._remove_from_relation(
+            user=user,
+            recipe=recipe,
+            relation_model=FavoriteRecipe,
+            success_message='Рецепт удален из избранного',
+            error_message='Рецепт не найден в избранном'
+        )
 
 
 @api_view(['GET'])
