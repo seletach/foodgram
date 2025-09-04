@@ -137,18 +137,19 @@ class UserViewSet(UserViewSet):
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        subscription = Subscription.objects.filter(subscriber=user,
-                                                   author=author)
-        if not subscription:
+        try:
+            subscription = Subscription.objects.get(subscriber=user,
+                                                    author=author)
+            subscription.delete()
+            return Response(
+                {'detail': 'Вы успешно отписались'},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except Subscription.DoesNotExist:
             return Response(
                 {'detail': 'Вы не подписаны на этого пользователя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        subscription.delete()
-        return Response(
-            {'detail': 'Вы успешно отписались'},
-            status=status.HTTP_204_NO_CONTENT
-        )
 
     @action(detail=False, methods=['put', 'delete'],
             permission_classes=[IsAuthenticated], url_path='me/avatar')
