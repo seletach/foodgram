@@ -137,15 +137,16 @@ class UserViewSet(UserViewSet):
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        try:
-            subscription = Subscription.objects.get(subscriber=user,
-                                                    author=author)
-            subscription.delete()
+        deleted, _ = Subscription.objects.filter(
+            subscriber=user, author=author
+        ).delete()
+
+        if deleted:
             return Response(
                 {'detail': 'Вы успешно отписались'},
                 status=status.HTTP_204_NO_CONTENT
             )
-        except Subscription.DoesNotExist:
+        else:
             return Response(
                 {'detail': 'Вы не подписаны на этого пользователя'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -274,11 +275,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
                               success_message,
                               error_message):
         """Статический метод для удаления из связи (избранное/корзина)."""
-        deleted_count, _ = relation_model.objects.filter(
+        deleted, _ = relation_model.objects.filter(
             user=user, recipe=recipe
         ).delete()
 
-        if deleted_count > 0:
+        if deleted:
             return Response(
                 {'detail': success_message},
                 status=status.HTTP_204_NO_CONTENT

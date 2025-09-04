@@ -158,21 +158,15 @@ class RecipeSerializer(ModelSerializer):
     def get_is_favorited(self, obj):
         """Проверка наличия рецепта в избранном у текущего пользователя."""
         request = self.context.get('request')
-        try:
-            return obj.recipes_favoriterecipe_by_recipe.filter(
-                user=request.user.id).exists()
-        except Exception:
-            return False
+        return obj.recipes_favoriterecipe_by_recipe.filter(
+            user=request.user.id).exists()
 
     def get_is_in_shopping_cart(self, obj):
         """Проверка наличия рецепта в корзине покупок у текущего пользователя.
         """
         request = self.context.get('request')
-        try:
-            return obj.recipes_shoppingcart_by_recipe.filter(
-                user=request.user.id).exists()
-        except Exception:
-            return False
+        return obj.recipes_shoppingcart_by_recipe.filter(
+            user=request.user.id).exists()
 
 
 class CreateRecipeSerializer(ModelSerializer):
