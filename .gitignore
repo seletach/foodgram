@@ -141,5 +141,4 @@ dmypy.json
 static/
 media/
 архив/
-**/import_data.py
 **/foodgram_db
