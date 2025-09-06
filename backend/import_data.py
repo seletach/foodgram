@@ -18,5 +18,5 @@ def import_ingredients_from_csv(file_path):
 
 
 if __name__ == '__main__':
-    file_path = '/app/data/ingredients2.csv'
+    file_path = '/app/data/ingredients.csv'
     import_ingredients_from_csv(file_path)
