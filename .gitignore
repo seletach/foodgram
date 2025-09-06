@@ -142,3 +142,4 @@ static/
 media/
 архив/
 **/foodgram_db
+**/import_data.py
